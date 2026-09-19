@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Environment variables and credentials
+.env
+.env.*
+!.env.example
+credentials*.json
+service-account*.json
+
+# Generated client data
+/data/
+/reports/
+/screenshots/
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Operating systems and editors
+.DS_Store
+Thumbs.db
