@@ -1,19 +1,19 @@
 export type DeviceType = 'desktop' | 'mobile';
 
 export interface MonitoredPage {
-    name: string;
-    path: string;
-    expectedTitle?: string;
-    expectedH1?: string;
-    shouldBeIndexable?: boolean;
+  name: string;
+  path: string;
+  expectedTitle?: string;
+  expectedH1?: string;
+  shouldBeIndexable?: boolean;
 }
 
 export interface MonitoredKeyword {
-    query: string;
-    targetPath: string;
-    device?: DeviceType;
-    country?: string;
-    language?: string; 
+  query: string;
+  targetPath: string;
+  device?: DeviceType;
+  country?: string;
+  language?: string;
 }
 
 export interface SiteContact {

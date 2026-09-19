@@ -1,6 +1,6 @@
 import type { SiteConfig } from "../../src/types/site-config";
 
-export const CasaMalvaConfig = {
+export const casaMalvaConfig = {
     id: 'casa-malva',
     name: 'HOTEL CASA MALVA GUANAJUATO',
     baseUrl: 'https://hotelcasamalvagto.com',
@@ -19,6 +19,7 @@ export const CasaMalvaConfig = {
             name: 'Inicio',
             path: '/',
             expectedTitle: 'Hotel Casa Malva Guanajuato | Sitio oficial',
+            expectedH1: 'Casa Malva – Sweet Stay B&B',
             shouldBeIndexable: false,
         },
     ],
@@ -27,8 +28,9 @@ export const CasaMalvaConfig = {
         {
             query: 'hotel casa malva guanajuato',
             targetPath: '/',
+            device: 'mobile',
             country: 'MX',
-            language: 'es'
+            language: 'es',
         },
         {
             query: 'casa malva guanajuato',
