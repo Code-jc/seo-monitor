@@ -9,6 +9,14 @@ export const casaMalvaConfig = {
 
     searchConsoleProperty: 'sc-domain:hotelcasamalvagto.com',
 
+    searchVisibility: {
+        targets: [{
+            id: 'website',
+            type: 'website',
+            domain: 'hotelcasamalva.com',
+        }],
+    },
+
     contact: {
         phone: '+524731027067',
         whatsapp: '+524731840180',
