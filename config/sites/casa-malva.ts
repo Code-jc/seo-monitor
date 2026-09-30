@@ -13,7 +13,7 @@ export const casaMalvaConfig = {
         targets: [{
             id: 'website',
             type: 'website',
-            domain: 'hotelcasamalva.com',
+            domain: 'hotelcasamalvagto.com',
         }],
     },
 

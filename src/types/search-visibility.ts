@@ -1,5 +1,11 @@
 export type SearchProvider = 'google';
 
+export type VisibilityStatus =
+    | 'success'
+    | 'not_found'
+    | 'blocked'
+    | 'error';
+
 export type SearchTargetType =
     | 'website'
     | 'social'
@@ -29,6 +35,7 @@ export interface VisibilityResult {
     targetType: SearchTargetType;
 
     // Result
+    status: VisibilityStatus;
     found: boolean;
     position: number | null;
     resultPage: number | null;
