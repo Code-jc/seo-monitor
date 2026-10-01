@@ -27,8 +27,8 @@ export const casaMalvaConfig = {
             name: 'Inicio',
             path: '/',
             expectedTitle: 'Hotel Casa Malva Guanajuato | Sitio oficial',
-            expectedH1: 'Casa Malva – Sweet Stay B&B',
-            shouldBeIndexable: false,
+            expectedH1: 'Hotel Casa Malva Guanajuato',
+            shouldBeIndexable: true,
         },
     ],
 
