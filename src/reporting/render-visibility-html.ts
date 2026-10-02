@@ -78,7 +78,9 @@ export function renderVisibilityHtml(
     const baselinePosition =
         report.baseline.position !== null
             ? `#${report.baseline.position}`
-            : "Sin dato";
+            : report.baseline.status === "not_found"
+                ? "Sin ranking"
+                : "Sin dato";
 
     const baselineDescription =
         report.baseline.status === "blocked"
@@ -1050,19 +1052,21 @@ export function renderVisibilityHtml(
 
         <div class="card">
 
-            <div class="label">
-                Histórico
-            </div>
+    <div class="label">
+        Histórico
+    </div>
 
-            <div class="metric">
-                ${report.change.totalMeasurements}
-            </div>
+    <div class="metric">
+        ${report.change.measurableMeasurements}
+    </div>
 
-            <div class="details">
-                Mediciones registradas
-            </div>
+    <div class="details">
+        Mediciones válidas
+        <br />
+        ${report.change.totalMeasurements} totales
+    </div>
 
-        </div>
+</div>
 
         <div class="card">
 

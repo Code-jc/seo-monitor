@@ -48,14 +48,10 @@ export interface VisibilityReport {
     };
 
     change: {
-        positionChange:
-        number | null;
-
-        statusChanged:
-        boolean;
-
-        totalMeasurements:
-        number;
+        positionChange: number | null;
+        statusChanged: boolean;
+        totalMeasurements: number;
+        measurableMeasurements: number;
     };
 }
 
@@ -112,14 +108,10 @@ export function buildVisibilityReport(
         },
 
         change: {
-            positionChange:
-                summary.positionChange,
-
-            statusChanged:
-                summary.statusChanged,
-
-            totalMeasurements:
-                summary.totalMeasurements,
+            positionChange: summary.positionChange,
+            statusChanged: summary.statusChanged,
+            totalMeasurements: summary.totalMeasurements,
+            measurableMeasurements: summary.measurableMeasurements,
         },
     };
 }
