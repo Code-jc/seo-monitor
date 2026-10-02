@@ -89,15 +89,26 @@ export function renderVisibilityHtml(
                     ? "Encontrado en la medición inicial"
                     : "Sin medición inicial";
 
-    const technicalChecks = [
-        "HTTP 200",
-        "Title correcto",
-        "H1 correcto",
-        "Canonical",
-        "Indexable",
-        "robots.txt",
-        "Sitemap XML",
-    ];
+    const technicalSeo =
+        report.technicalSeo;
+
+    const technicalPassed =
+        technicalSeo?.passed ?? 0;
+
+    const technicalTotal =
+        technicalSeo?.total ?? 0;
+
+    const technicalChecks =
+        technicalSeo?.checks ?? [];
+
+    const technicalStatusText =
+        technicalSeo === null
+            ? "Sin auditoría"
+            : technicalPassed === technicalTotal
+                ? "Checks correctos"
+                : `${technicalTotal -
+                technicalPassed
+                } problema(s) detectado(s)`;
 
     const baselineDate =
         formatDate(report.baseline.checkedAt);
@@ -135,8 +146,11 @@ export function renderVisibilityHtml(
             --border:
                 rgba(255, 255, 255, 0.70);
 
-            --success: #26734d;
-            --warning: #a46b18;
+            --success:
+                #26734d;
+
+            --warning:
+                #a46b18;
 
             --shadow:
                 0 18px 60px
@@ -150,7 +164,10 @@ export function renderVisibilityHtml(
         body {
             margin: 0;
 
-            color: var(--text);
+            min-height: 100vh;
+
+            color:
+                var(--text);
 
             font-family:
                 Inter,
@@ -159,22 +176,35 @@ export function renderVisibilityHtml(
                 "Segoe UI",
                 sans-serif;
 
-            min-height: 100vh;
-
             background:
                 radial-gradient(
                     circle at 15% 10%,
-                    rgba(205, 182, 230, 0.34),
+                    rgba(
+                        205,
+                        182,
+                        230,
+                        0.34
+                    ),
                     transparent 33%
                 ),
                 radial-gradient(
                     circle at 88% 16%,
-                    rgba(175, 218, 224, 0.28),
+                    rgba(
+                        175,
+                        218,
+                        224,
+                        0.28
+                    ),
                     transparent 30%
                 ),
                 radial-gradient(
                     circle at 65% 85%,
-                    rgba(236, 199, 187, 0.32),
+                    rgba(
+                        236,
+                        199,
+                        187,
+                        0.32
+                    ),
                     transparent 34%
                 ),
                 linear-gradient(
@@ -184,56 +214,86 @@ export function renderVisibilityHtml(
                     #eef3f3
                 );
 
-            background-attachment: fixed;
+            background-attachment:
+                fixed;
         }
 
         body::before {
             content: "";
 
-            position: fixed;
+            position:
+                fixed;
+
             inset: 0;
 
-            pointer-events: none;
+            pointer-events:
+                none;
 
             background:
                 linear-gradient(
                     115deg,
                     transparent 20%,
-                    rgba(255, 255, 255, 0.25) 45%,
+                    rgba(
+                        255,
+                        255,
+                        255,
+                        0.25
+                    ) 45%,
                     transparent 70%
                 );
 
-            opacity: 0.75;
+            opacity:
+                0.75;
         }
 
         .container {
-            position: relative;
+            position:
+                relative;
+
             z-index: 1;
 
-            max-width: 1180px;
+            max-width:
+                1180px;
 
-            margin: 0 auto;
+            margin:
+                0 auto;
 
             padding:
                 54px 26px 70px;
         }
 
         .hero {
-            position: relative;
+            position:
+                relative;
 
             padding:
                 28px 30px;
 
-            margin-bottom: 22px;
+            margin-bottom:
+                22px;
 
-            border-radius: 26px;
+            overflow:
+                hidden;
+
+            border-radius:
+                26px;
 
             background:
-                rgba(255, 255, 255, 0.42);
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.42
+                );
 
             border:
                 1px solid
-                rgba(255, 255, 255, 0.75);
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.75
+                );
 
             backdrop-filter:
                 blur(24px)
@@ -246,49 +306,74 @@ export function renderVisibilityHtml(
             box-shadow:
                 var(--shadow),
                 inset 0 1px 0
-                rgba(255, 255, 255, 0.85);
-
-            overflow: hidden;
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.85
+                );
         }
 
         .hero > * {
-            position: relative;
+            position:
+                relative;
+
             z-index: 1;
         }
 
         .hero::after {
             content: "";
 
-            position: absolute;
+            position:
+                absolute;
+
             z-index: 0;
 
-            width: 260px;
-            height: 260px;
+            width:
+                260px;
 
-            border-radius: 50%;
+            height:
+                260px;
 
-            right: 8%;
-            top: -150px;
+            right:
+                8%;
+
+            top:
+                -150px;
+
+            border-radius:
+                50%;
 
             background:
-                rgba(196, 177, 230, 0.22);
+                rgba(
+                    196,
+                    177,
+                    230,
+                    0.22
+                );
 
-            filter: blur(35px);
+            filter:
+                blur(35px);
 
-            pointer-events: none;
+            pointer-events:
+                none;
         }
 
         .eyebrow {
-            text-transform: uppercase;
+            text-transform:
+                uppercase;
 
             letter-spacing:
                 0.18em;
 
-            font-size: 11px;
+            font-size:
+                11px;
 
-            font-weight: 750;
+            font-weight:
+                750;
 
-            color: #816f7f;
+            color:
+                #816f7f;
         }
 
         h1 {
@@ -302,22 +387,27 @@ export function renderVisibilityHtml(
                     47px
                 );
 
-            line-height: 1.05;
+            line-height:
+                1.05;
 
             letter-spacing:
                 -0.035em;
         }
 
         .subtitle {
-            margin: 0;
+            margin:
+                0;
 
-            color: var(--muted);
+            color:
+                var(--muted);
 
-            font-size: 15px;
+            font-size:
+                15px;
         }
 
         .grid {
-            display: grid;
+            display:
+                grid;
 
             grid-template-columns:
                 repeat(
@@ -325,15 +415,35 @@ export function renderVisibilityHtml(
                     minmax(0, 1fr)
                 );
 
-            gap: 16px;
+            gap:
+                16px;
 
-            margin-bottom: 28px;
+            margin-bottom:
+                28px;
+        }
+
+        .summary-grid {
+            grid-template-columns:
+                repeat(
+                    4,
+                    minmax(0, 1fr)
+                );
+        }
+
+        .comparison-grid {
+            grid-template-columns:
+                repeat(
+                    4,
+                    minmax(0, 1fr)
+                );
         }
 
         .card {
-            position: relative;
+            position:
+                relative;
 
-            overflow: hidden;
+            overflow:
+                hidden;
 
             padding:
                 23px;
@@ -359,23 +469,33 @@ export function renderVisibilityHtml(
             box-shadow:
                 var(--shadow),
                 inset 0 1px 0
-                rgba(255, 255, 255, 0.8);
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.8
+                );
         }
 
         .card > * {
-            position: relative;
+            position:
+                relative;
+
             z-index: 2;
         }
 
         .card::before {
             content: "";
 
-            position: absolute;
+            position:
+                absolute;
+
             z-index: 0;
 
             inset: 0;
 
-            pointer-events: none;
+            pointer-events:
+                none;
 
             background:
                 linear-gradient(
@@ -393,14 +513,19 @@ export function renderVisibilityHtml(
         .card::after {
             content: "";
 
-            position: absolute;
+            position:
+                absolute;
+
             z-index: 1;
 
-            inset: 1px;
+            inset:
+                1px;
 
-            border-radius: inherit;
+            border-radius:
+                inherit;
 
-            pointer-events: none;
+            pointer-events:
+                none;
 
             background:
                 linear-gradient(
@@ -421,14 +546,16 @@ export function renderVisibilityHtml(
                     )
                 );
 
-            opacity: 0.55;
+            opacity:
+                0.55;
         }
 
         .label {
             font-size:
                 12px;
 
-            font-weight: 650;
+            font-weight:
+                650;
 
             text-transform:
                 uppercase;
@@ -512,16 +639,19 @@ export function renderVisibilityHtml(
         }
 
         .serp-layout {
-            display: grid;
+            display:
+                grid;
 
             grid-template-columns:
                 1.4fr 0.8fr;
 
-            gap: 16px;
+            gap:
+                16px;
         }
 
         .data-grid {
-            display: grid;
+            display:
+                grid;
 
             grid-template-columns:
                 repeat(
@@ -579,8 +709,11 @@ export function renderVisibilityHtml(
             list-style:
                 none;
 
-            padding: 0;
-            margin: 0;
+            padding:
+                0;
+
+            margin:
+                0;
 
             display:
                 grid;
@@ -682,7 +815,8 @@ export function renderVisibilityHtml(
             align-items:
                 center;
 
-            gap: 7px;
+            gap:
+                7px;
 
             padding:
                 6px 10px;
@@ -725,6 +859,41 @@ export function renderVisibilityHtml(
                 currentColor;
         }
 
+        .comparison-grid .card {
+            display:
+                flex;
+
+            flex-direction:
+                column;
+        }
+
+        .comparison-grid .label {
+            min-height:
+                18px;
+        }
+
+        .comparison-grid .metric {
+            min-height:
+                42px;
+
+            display:
+                flex;
+
+            align-items:
+                center;
+
+            margin-bottom:
+                8px;
+        }
+
+        .comparison-grid .details {
+            min-height:
+                66px;
+
+            margin-top:
+                0;
+        }
+
         .footer {
             margin-top:
                 42px;
@@ -753,20 +922,19 @@ export function renderVisibilityHtml(
             justify-content:
                 space-between;
 
-            gap: 20px;
+            gap:
+                20px;
         }
 
         @media (
             max-width: 900px
         ) {
-            .grid {
+            .summary-grid,
+            .comparison-grid {
                 grid-template-columns:
                     repeat(
                         2,
-                        minmax(
-                            0,
-                            1fr
-                        )
+                        minmax(0, 1fr)
                     );
             }
 
@@ -774,10 +942,7 @@ export function renderVisibilityHtml(
                 grid-template-columns:
                     repeat(
                         2,
-                        minmax(
-                            0,
-                            1fr
-                        )
+                        minmax(0, 1fr)
                     );
             }
 
@@ -800,7 +965,8 @@ export function renderVisibilityHtml(
                     23px 20px;
             }
 
-            .grid,
+            .summary-grid,
+            .comparison-grid,
             .check-list,
             .data-grid {
                 grid-template-columns:
@@ -824,6 +990,7 @@ export function renderVisibilityHtml(
 <main class="container">
 
     <section class="hero">
+
         <div class="eyebrow">
             SEO Monitor
         </div>
@@ -837,25 +1004,33 @@ export function renderVisibilityHtml(
             indexabilidad y visibilidad
             orgánica
         </p>
+
     </section>
 
-    <section class="grid">
+    <section class="grid summary-grid">
 
         <div class="card">
+
             <div class="label">
                 SEO técnico
             </div>
 
-            <div class="metric status-ok">
-                7 / 7
+            <div class="metric ${technicalSeo !== null &&
+            technicalPassed === technicalTotal
+            ? "status-ok"
+            : "status-warning"
+        }">
+                ${technicalPassed} / ${technicalTotal}
             </div>
 
             <div class="details">
-                Checks correctos
+                ${technicalStatusText}
             </div>
+
         </div>
 
         <div class="card">
+
             <div class="label">
                 Posición orgánica
             </div>
@@ -870,9 +1045,11 @@ export function renderVisibilityHtml(
             <div class="details">
                 ${latestStatus}
             </div>
+
         </div>
 
         <div class="card">
+
             <div class="label">
                 Histórico
             </div>
@@ -884,9 +1061,11 @@ export function renderVisibilityHtml(
             <div class="details">
                 Mediciones registradas
             </div>
+
         </div>
 
         <div class="card">
+
             <div class="label">
                 Cambio
             </div>
@@ -898,6 +1077,7 @@ export function renderVisibilityHtml(
             <div class="details">
                 Baseline vs actual
             </div>
+
         </div>
 
     </section>
@@ -912,6 +1092,7 @@ export function renderVisibilityHtml(
 
             <div class="badge">
                 <span class="dot"></span>
+
                 Google Organic · SerpApi
             </div>
 
@@ -922,6 +1103,7 @@ export function renderVisibilityHtml(
             <div class="data-grid">
 
                 <div class="datum">
+
                     <div class="datum-name">
                         Estado
                     </div>
@@ -929,9 +1111,11 @@ export function renderVisibilityHtml(
                     <div class="datum-value">
                         ${latestStatus}
                     </div>
+
                 </div>
 
                 <div class="datum">
+
                     <div class="datum-name">
                         Posición
                     </div>
@@ -942,9 +1126,11 @@ export function renderVisibilityHtml(
             : "No encontrada"
         }
                     </div>
+
                 </div>
 
                 <div class="datum">
+
                     <div class="datum-name">
                         Cobertura
                     </div>
@@ -952,9 +1138,11 @@ export function renderVisibilityHtml(
                     <div class="datum-value">
                         Top 50
                     </div>
+
                 </div>
 
                 <div class="datum">
+
                     <div class="datum-name">
                         Dispositivo
                     </div>
@@ -962,9 +1150,11 @@ export function renderVisibilityHtml(
                     <div class="datum-value">
                         Mobile
                     </div>
+
                 </div>
 
                 <div class="datum">
+
                     <div class="datum-name">
                         Ubicación
                     </div>
@@ -972,9 +1162,11 @@ export function renderVisibilityHtml(
                     <div class="datum-value">
                         Guanajuato, Gto., México
                     </div>
+
                 </div>
 
                 <div class="datum">
+
                     <div class="datum-name">
                         Última medición
                     </div>
@@ -982,12 +1174,15 @@ export function renderVisibilityHtml(
                     <div class="datum-value">
                         ${latestDate}
                     </div>
+
                 </div>
 
             </div>
+
         </div>
 
         <div class="card">
+
             <div class="label">
                 Lectura actual
             </div>
@@ -1008,6 +1203,7 @@ export function renderVisibilityHtml(
             : "No encontrado dentro de los primeros 50 resultados orgánicos."
         }
             </div>
+
         </div>
 
     </section>
@@ -1017,28 +1213,41 @@ export function renderVisibilityHtml(
     </h2>
 
     <ul class="check-list">
-        ${technicalChecks
-            .map(
-                (check) => `
-                    <li>
-                        <span class="check">
-                            ✓
-                        </span>
+        ${technicalChecks.length > 0
+            ? technicalChecks
+                .map(
+                    (check) => `
+                            <li>
 
-                        ${check}
+                                <span class="check">
+                                    ${check.passed
+                            ? "✓"
+                            : "!"
+                        }
+                                </span>
+
+                                ${check.label}
+
+                            </li>
+                        `
+                )
+                .join("")
+            : `
+                    <li>
+                        Sin auditoría técnica disponible
                     </li>
                 `
-            )
-            .join("")}
+        }
     </ul>
 
     <h2 class="section-title">
         Baseline vs actual
     </h2>
 
-    <section class="grid">
+    <section class="grid comparison-grid">
 
         <div class="card">
+
             <div class="label">
                 Baseline
             </div>
@@ -1053,9 +1262,11 @@ export function renderVisibilityHtml(
 
                 ${baselineDate}
             </div>
+
         </div>
 
         <div class="card">
+
             <div class="label">
                 Estado actual
             </div>
@@ -1070,9 +1281,11 @@ export function renderVisibilityHtml(
 
                 ${latestDate}
             </div>
+
         </div>
 
         <div class="card">
+
             <div class="label">
                 Profundidad SERP
             </div>
@@ -1084,9 +1297,11 @@ export function renderVisibilityHtml(
             <div class="details">
                 Resultados monitoreados
             </div>
+
         </div>
 
         <div class="card">
+
             <div class="label">
                 Mercado
             </div>
@@ -1098,6 +1313,7 @@ export function renderVisibilityHtml(
             <div class="details">
                 Español · Mobile
             </div>
+
         </div>
 
     </section>
