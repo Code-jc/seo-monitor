@@ -3,7 +3,7 @@ import { casaMalvaConfig } from "../config/sites/casa-malva";
 import { VisibilityResult } from "../src/types/search-visibility";
 import { extractGoogleResults } from "../src/search/extract-google-results";
 import { matchesTarget } from "../src/search/matches-target";
-import { saveVisibilityResult } from "../src/storage/save-visibility-results";
+import { saveVisibilityResult } from "../src/storage/save-visibility-result";
 
 test.describe(`Google Visibility: ${casaMalvaConfig.name}`, () => {
     for (const keyword of casaMalvaConfig.keywords.slice(0, 1)) {

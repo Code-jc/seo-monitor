@@ -106,9 +106,7 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
                         hasNoIndex,
                         `${url} should be indexable but contains noindex`
                     ).toBe(false);
-                }
-
-                if (shouldBeIndexable === false) {
+                } else {
                     expect.soft(
                         hasNoIndex,
                         `${url} should be noindex but appears indexable`

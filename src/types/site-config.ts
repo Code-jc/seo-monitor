@@ -15,6 +15,7 @@ export interface MonitoredKeyword {
   device?: DeviceType;
   country?: string;
   language?: string;
+  location?: string;
 }
 
 export interface SiteContact {
