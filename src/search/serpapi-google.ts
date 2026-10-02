@@ -145,6 +145,14 @@ export async function getGoogleVisibilityViaSerpApi(
             "organic results"
         );
 
+        if (organicResults.length === 0) {
+            console.log(
+                "No more organic results. Stopping pagination."
+            );
+
+            break;
+        }
+
         const matchedIndex =
             organicResults.findIndex(
                 (result) => {

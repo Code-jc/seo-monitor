@@ -48,7 +48,14 @@ export const casaMalvaConfig = {
             country: 'MX',
             language: 'es',
             location: "Guanajuato, Guanajuato, Mexico",
-
+        },
+        {
+            query: 'hotel en guanajuato',
+            targetPath: '/',
+            device: 'mobile',
+            country: 'MX',
+            language: 'es',
+            location: "Guanajuato, Guanajuato, Mexico",
         },
         {
             query: 'hotel cerca del museo de las momias',

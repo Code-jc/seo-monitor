@@ -3,7 +3,9 @@ import {
     test,
 } from "@playwright/test";
 
-import { casaMalvaConfig } from "../config/sites/casa-malva";
+import {
+    casaMalvaConfig,
+} from "../config/sites/casa-malva";
 
 import {
     getGoogleVisibilityViaSerpApi,
@@ -13,28 +15,62 @@ import {
     saveVisibilityResult,
 } from "../src/storage/save-visibility-result";
 
-test(
+test.describe(
     "Casa Malva visibility via SerpApi",
-    async () => {
-        const keyword =
-            casaMalvaConfig.keywords[0];
+    () => {
+        for (
+            const keyword
+            of casaMalvaConfig.keywords
+        ) {
+            test(
+                keyword.query,
+                async () => {
+                    test.setTimeout(
+                        90_000
+                    );
 
-        const result =
-            await getGoogleVisibilityViaSerpApi(
-                casaMalvaConfig,
-                keyword
+                    console.log(
+                        `\nChecking keyword: "${keyword.query}"`
+                    );
+
+                    const result =
+                        await getGoogleVisibilityViaSerpApi(
+                            casaMalvaConfig,
+                            keyword
+                        );
+
+                    console.log(
+                        "SerpApi visibility:",
+                        {
+                            query:
+                                result.query,
+
+                            status:
+                                result.status,
+
+                            position:
+                                result.position,
+
+                            resultPage:
+                                result.resultPage,
+
+                            matchedUrl:
+                                result.matchedUrl,
+                        }
+                    );
+
+                    saveVisibilityResult(
+                        result
+                    );
+
+                    expect([
+                        "success",
+                        "not_found",
+                    ]).toContain(
+                        result.status
+                    );
+                }
             );
-
-        console.log(
-            "SerpApi visibility:",
-            result
-        );
-
-        saveVisibilityResult(result);
-
-        expect([
-            "success",
-            "not_found",
-        ]).toContain(result.status);
+        }
     }
 );

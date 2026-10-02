@@ -29,6 +29,10 @@ test("Render Casa Malva visibility HTML", async () => {
     );
 
     expect(html).toContain(
-        "Mediciones totales"
+        "Mediciones válidas"
+    );
+
+    expect(html).toContain(
+        "totales"
     );
 });
