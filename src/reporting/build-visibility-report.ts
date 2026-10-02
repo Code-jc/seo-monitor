@@ -14,11 +14,17 @@ import type {
     VisibilitySummary,
 } from "../visibility/get-visibility-summary";
 
+import type {
+    KeywordVisibilitySummary,
+} from "../visibility/get-keyword-visibility-summaries";
+
 export interface VisibilityReport {
     siteId: string;
     siteName: string;
 
     keyword: string;
+    keywordSummaries?:
+    KeywordVisibilitySummary[];
 
     technicalSeo:
     TechnicalSeoResult | null;

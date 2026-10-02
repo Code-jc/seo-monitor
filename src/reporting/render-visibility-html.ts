@@ -118,6 +118,9 @@ export function renderVisibilityHtml(
     const latestDate =
         formatDate(report.latest.checkedAt);
 
+    const keywordSummaries =
+        report.keywordSummaries ?? [];
+
     return `
 <!DOCTYPE html>
 <html lang="es">
@@ -896,6 +899,121 @@ export function renderVisibilityHtml(
                 0;
         }
 
+        .keyword-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.keyword-table th,
+.keyword-table td {
+    padding:
+        15px 14px;
+
+    text-align:
+        left;
+
+    border-bottom:
+        1px solid
+        rgba(
+            97,
+            82,
+            73,
+            0.10
+        );
+}
+
+.keyword-table th {
+    font-size:
+        11px;
+
+    text-transform:
+        uppercase;
+
+    letter-spacing:
+        0.07em;
+
+    color:
+        #8c817b;
+
+    font-weight:
+        650;
+}
+
+.keyword-table td {
+    font-size:
+        14px;
+
+    color:
+        #514a46;
+}
+
+.keyword-table tr:last-child td {
+    border-bottom:
+        none;
+}
+
+.keyword-name {
+    font-weight:
+        650;
+
+    color:
+        var(--text);
+}
+
+.keyword-position {
+    font-weight:
+        750;
+
+    font-size:
+        16px;
+}
+
+.keyword-status {
+    display:
+        inline-flex;
+
+    padding:
+        5px 9px;
+
+    border-radius:
+        999px;
+
+    background:
+        rgba(
+            164,
+            107,
+            24,
+            0.09
+        );
+
+    color:
+        #926119;
+
+    font-size:
+        12px;
+
+    font-weight:
+        650;
+}
+
+.keyword-status.found {
+    background:
+        rgba(
+            38,
+            115,
+            77,
+            0.11
+        );
+
+    color:
+        var(--success);
+}
+
+.table-wrapper {
+    overflow-x:
+        auto;
+}
+
         .footer {
             margin-top:
                 42px;
@@ -1211,6 +1329,128 @@ export function renderVisibilityHtml(
         </div>
 
     </section>
+
+    <h2 class="section-title">
+    Keywords monitoreadas
+</h2>
+
+<div class="card table-wrapper">
+
+    <table class="keyword-table">
+
+        <thead>
+            <tr>
+                <th>
+                    Keyword
+                </th>
+
+                <th>
+                    Baseline
+                </th>
+
+                <th>
+                    Actual
+                </th>
+
+                <th>
+                    Cambio
+                </th>
+
+                <th>
+                    Estado
+                </th>
+
+                <th>
+                    Mediciones
+                </th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            ${keywordSummaries
+            .map(
+                (summary) => {
+                    const baseline =
+                        summary.baseline
+                            .position !== null
+                            ? `#${summary.baseline.position}`
+                            : "Sin ranking";
+
+                    const current =
+                        summary.latest
+                            .position !== null
+                            ? `#${summary.latest.position}`
+                            : "Sin ranking";
+
+                    const change =
+                        summary.positionChange === null
+                            ? "—"
+                            : summary.positionChange > 0
+                                ? `+${summary.positionChange}`
+                                : String(
+                                    summary.positionChange
+                                );
+
+                    const found =
+                        summary.latest
+                            .status === "success";
+
+                    const status =
+                        found
+                            ? "Encontrado"
+                            : summary.latest
+                                .status === "not_found"
+                                ? "No encontrado"
+                                : "Sin dato";
+
+                    return `
+                                <tr>
+
+                                    <td class="keyword-name">
+                                        ${summary.query}
+                                    </td>
+
+                                    <td>
+                                        ${baseline}
+                                    </td>
+
+                                    <td class="keyword-position">
+                                        ${current}
+                                    </td>
+
+                                    <td>
+                                        ${change}
+                                    </td>
+
+                                    <td>
+                                        <span class="keyword-status ${found
+                            ? "found"
+                            : ""
+                        }">
+                                            ${status}
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        ${summary.measurableMeasurements}
+                                        /
+                                        ${summary.totalMeasurements}
+                                    </td>
+
+                                </tr>
+                            `;
+                }
+            )
+            .join("")
+        }
+
+        </tbody>
+
+    </table>
+
+</div>
+
 
     <h2 class="section-title">
         Estado técnico

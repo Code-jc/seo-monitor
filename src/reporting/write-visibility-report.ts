@@ -13,6 +13,14 @@ import {
     loadTechnicalSeoResult,
 } from "../storage/load-technical-seo-result";
 
+import {
+    loadVisibilityResults,
+} from "../storage/load-visibility-results";
+
+import {
+    getKeywordVisibilitySummaries,
+} from "../visibility/get-keyword-visibility-summaries";
+
 export function writeVisibilityReport(
     report: VisibilityReport
 ): string {
@@ -38,11 +46,23 @@ export function writeVisibilityReport(
             report.siteId
         );
 
+    const visibilityResults =
+        loadVisibilityResults(
+            report.siteId
+        );
+
+    const keywordSummaries =
+        getKeywordVisibilitySummaries(
+            visibilityResults
+        );
+
     const enrichedReport:
         VisibilityReport = {
         ...report,
 
         technicalSeo,
+
+        keywordSummaries,
     };
 
     const html =
