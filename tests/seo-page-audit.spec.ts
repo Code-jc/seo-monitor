@@ -203,10 +203,44 @@ test.describe(
                         casaMalvaConfig.baseUrl
                     ).toString();
 
-                const sitemapResponse =
-                    await request.get(
-                        sitemapUrl
-                    );
+                let sitemapResponse = await request.get(
+                    sitemapUrl,
+                    { timeout: 20_000 }
+                );
+
+                if (sitemapResponse.status() === 429) {
+                    const retryAfter = sitemapResponse.headersArray()
+                        .find(
+                            (header) =>
+                                header.name.toLowerCase() === "retry-after"
+                        )?.value;
+
+                    let waitMs = 15_000;
+
+                    if (retryAfter) {
+                        waitMs = /^\d+$/.test(retryAfter)
+                            ? Number(retryAfter) * 1_000
+                            : Date.parse(retryAfter) - Date.now();
+                    }
+
+                    console.log("Sitemap rate limit:", {
+                        retryAfter: retryAfter ?? null,
+                        waitMs,
+                    });
+
+                    // Si exige más de 30 segundos, conservamos el fallo.
+                    if (Number.isFinite(waitMs) && waitMs <= 30_000) {
+                        await new Promise(
+                            (resolve) =>
+                                setTimeout(resolve, Math.max(1_000, waitMs))
+                        );
+
+                        sitemapResponse = await request.get(
+                            sitemapUrl,
+                            { timeout: 20_000 }
+                        );
+                    }
+                }
 
                 const sitemapPassed =
                     sitemapResponse.status() <
