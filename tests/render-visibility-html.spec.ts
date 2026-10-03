@@ -66,3 +66,57 @@ test("Render Casa Malva visibility HTML", async ({ page }) => {
     await expect(primaryHistory.locator("time").first()).toContainText("(GMT-6)");
 
 });
+
+test("Show technical audit history", async ({ page }) => {
+    const report = buildVisibilityReport(
+        casaMalvaConfig,
+        primaryQuery,
+        getVisibilitySummary(primaryResults)
+    );
+
+    report.technicalSeoHistory = [
+        {
+            siteId: casaMalvaConfig.id,
+            checkedAt: "2026-10-01T12:00:00Z",
+            passed: 0,
+            total: 1,
+            checks: [
+                {
+                    id: "sitemap",
+                    label: "Sitemap XML",
+                    passed: false,
+                },
+            ],
+        },
+        {
+            siteId: casaMalvaConfig.id,
+            checkedAt: "2026-10-02T12:00:00Z",
+            passed: 1,
+            total: 1,
+            checks: [
+                {
+                    id: "sitemap",
+                    label: "Sitemap XML",
+                    passed: true,
+                },
+            ],
+        },
+    ];
+
+    await page.setContent(renderVisibilityHtml(report));
+
+    const history = page.locator("details.technical-history");
+    const audits = history.locator(":scope > ol > li");
+
+    await expect(history).toHaveCount(1);
+    await expect(audits).toHaveCount(2);
+    await expect(history.locator(":scope > ol")).toBeHidden();
+
+    await history.locator("summary").click();
+
+    await expect(history.locator(":scope > ol")).toBeVisible();
+    await expect(audits.first()).toContainText("0 / 1 checks correctos");
+    await expect(audits.first()).toContainText("Sitemap XML: Falló");
+    await expect(audits.last()).toContainText("1 / 1 checks correctos");
+    await expect(audits.last()).toContainText("Sitemap XML: Correcto");
+});
