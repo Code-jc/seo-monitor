@@ -20,7 +20,7 @@ function formatDate(value: string | null): string {
         minute: "2-digit",
         second: "2-digit",
         hourCycle: "h23",
-    }).format(date) + " (hora de México)";
+    }).format(date) + " (GMT-6)";
 }
 
 export function renderVisibilityHtml(
@@ -1320,7 +1320,6 @@ export function renderVisibilityHtml(
 
             <div class="details">
                 ${readingText}
-        }
             </div>
 
         </div>
