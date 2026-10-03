@@ -28,6 +28,27 @@ test("Group keyword histories and order measurements by date", () => {
     expect(secondary?.latest.position).toBe(24);
     expect(secondary?.totalMeasurements).toBe(2);
     expect(secondary?.measurableMeasurements).toBe(2);
+
+
+    expect(primary?.history).toHaveLength(2);
+    expect(
+        primary?.history?.map((measurement) => measurement.position)
+    ).toEqual([18, 8]);
+
+    expect(secondary?.history).toHaveLength(2);
+    expect(
+        secondary?.history?.map((measurement) => measurement.status)
+    ).toEqual(["not_found", "success"]);
+
+    for (const summary of summaries) {
+        const dates = (summary.history ?? []).map(
+            (measurement) => new Date(measurement.checkedAt).getTime()
+        );
+
+        expect(dates).toEqual(
+            [...dates].sort((a, b) => a - b)
+        );
+    }
 });
 
 test("Return no keyword summaries for empty history", () => {

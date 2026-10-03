@@ -23,6 +23,20 @@ function formatDate(value: string | null): string {
     }).format(date) + " (GMT-6)";
 }
 
+function escapeHtml(value: string): string {
+    return value.replace(/[&<>"']/g, (character) => {
+        const entities: Record<string, string> = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+        };
+
+        return entities[character]!;
+    });
+}
+
 export function renderVisibilityHtml(
     report: VisibilityReport
 ): string {
@@ -1099,6 +1113,31 @@ export function renderVisibilityHtml(
                     column;
             }
         }
+
+        .keyword-history {
+    margin-top: 10px;
+    font-weight: 400;
+    font-size: 13px;
+}
+
+.keyword-history summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.keyword-history ol {
+    margin: 12px 0 0;
+    padding-left: 20px;
+}
+
+.keyword-history li {
+    margin-bottom: 12px;
+}
+
+.keyword-history time {
+    opacity: 0.75;
+}    
+
     </style>
 </head>
 
@@ -1403,12 +1442,55 @@ export function renderVisibilityHtml(
                     const failedAttempt =
                         summary.latestAttempt?.status === "error" ||
                         summary.latestAttempt?.status === "blocked";
+
+                    const history = summary.history ?? [];
+
+                    const historyHtml = history.length === 0
+                        ? ""
+                        : `
+                            <details class="keyword-history">
+                                <summary>
+                                    Ver historial (${history.length})
+                                </summary>
+                                <ol>
+                                    ${history.map((measurement) => {
+                            const statusText =
+                                measurement.status === "success"
+                                    ? "Encontrado"
+                                    : measurement.status === "not_found"
+                                        ? "No encontrado en resultados consultados"
+                                        : measurement.status === "blocked"
+                                            ? "Medición bloqueada"
+                                            : "Error de medición";
+
+                            const positionText =
+                                measurement.status === "success" &&
+                                    measurement.position !== null
+                                    ? ` · #${measurement.position}`
+                                    : "";
+
+                            return `
+                                            <li>
+                                                <time datetime="${escapeHtml(measurement.checkedAt)}">
+                                                    ${escapeHtml(formatDate(measurement.checkedAt))}
+                                                </time>
+                                                <div>
+                                                    ${statusText}${positionText}
+                                                </div>
+                                            </li>
+                                        `;
+                        }).join("")}
+                                </ol>
+                            </details>
+                        `;
+
                     return `
                                 <tr>
 
                                     <td class="keyword-name">
-                                        ${summary.query}
-                                    </td>
+    ${escapeHtml(summary.query)}
+    ${historyHtml}
+</td>
 
                                     <td>
                                         ${baseline}
