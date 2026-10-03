@@ -9,6 +9,12 @@ import {
 export interface KeywordVisibilitySummary {
     query: string;
 
+    history?: {
+        checkedAt: string;
+        status: VisibilityResult["status"];
+        position: number | null;
+    }[];
+
     baseline: {
         status:
         | VisibilityResult["status"]
@@ -94,6 +100,14 @@ export function getKeywordVisibilitySummaries(
 
             return {
                 query,
+
+                history: orderedResults.map(
+                    (result) => ({
+                        checkedAt: result.checkedAt,
+                        status: result.status,
+                        position: result.position,
+                    })
+                ),
 
                 latestAttempt: summary.latestAttempt
                     ? {
