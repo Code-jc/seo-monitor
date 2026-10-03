@@ -132,6 +132,9 @@ export async function getGoogleVisibilityViaSerpApi(
     let matchedPosition: number | null = null;
     let matchedPage: number | null = null;
 
+    const reviewedUrls = new Set<string>();
+    let pagesReviewed = 0;
+
     for (
         let start = 0;
         start < MAX_POSITION;
@@ -155,6 +158,14 @@ export async function getGoogleVisibilityViaSerpApi(
             );
 
             break;
+        }
+
+        pagesReviewed += 1;
+
+        for (const result of organicResults) {
+            if (result.link) {
+                reviewedUrls.add(result.link);
+            }
         }
 
         const matchedIndex =
@@ -215,7 +226,9 @@ export async function getGoogleVisibilityViaSerpApi(
         status:
             matchedResult
                 ? "success"
-                : "not_found",
+                : reviewedUrls.size === 0
+                    ? "error"
+                    : "not_found",
 
         found:
             Boolean(matchedResult),
@@ -231,6 +244,10 @@ export async function getGoogleVisibilityViaSerpApi(
 
         matchedTitle:
             matchedResult?.title ?? null,
+
+        resultsReviewed: reviewedUrls.size,
+        pagesReviewed,
+        searchLimit: MAX_POSITION,
 
         /*
          * Deliberately null.

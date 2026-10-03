@@ -33,6 +33,10 @@ export interface KeywordVisibilitySummary {
         string | null;
     };
 
+    latestAttempt?: {
+        status: VisibilityResult["status"];
+        checkedAt: string;
+    } | null;
     positionChange:
     number | null;
 
@@ -90,6 +94,13 @@ export function getKeywordVisibilitySummaries(
 
             return {
                 query,
+
+                latestAttempt: summary.latestAttempt
+                    ? {
+                        status: summary.latestAttempt.status,
+                        checkedAt: summary.latestAttempt.checkedAt,
+                    }
+                    : null,
 
                 baseline: {
                     status:

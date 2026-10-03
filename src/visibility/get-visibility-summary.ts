@@ -9,6 +9,7 @@ export interface VisibilitySummary {
     measurableMeasurements: number;
     positionChange: number | null;
     statusChanged: boolean;
+    latestAttempt?: VisibilityResult | null;
 }
 
 function isMeasurable(
@@ -23,6 +24,14 @@ function isMeasurable(
 export function getVisibilitySummary(
     results: VisibilityResult[]
 ): VisibilitySummary {
+    const latestAttempt = [...results]
+        .sort(
+            (a, b) =>
+                new Date(a.checkedAt).getTime() -
+                new Date(b.checkedAt).getTime()
+        )
+        .at(-1) ?? null;
+
     if (results.length === 0) {
         return {
             baseline: null,
@@ -31,6 +40,7 @@ export function getVisibilitySummary(
             measurableMeasurements: 0,
             positionChange: null,
             statusChanged: false,
+            latestAttempt,
         };
     }
 
@@ -51,6 +61,7 @@ export function getVisibilitySummary(
             measurableMeasurements: 0,
             positionChange: null,
             statusChanged: false,
+            latestAttempt,
         };
     }
 
@@ -83,5 +94,7 @@ export function getVisibilitySummary(
         statusChanged:
             baseline.status !==
             latest.status,
+
+        latestAttempt,
     };
 }

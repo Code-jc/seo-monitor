@@ -11,44 +11,16 @@ function formatDate(value: string | null): string {
         return value;
     }
 
-    const months = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-    ];
-
-    const day = String(
-        date.getUTCDate()
-    ).padStart(2, "0");
-
-    const month =
-        months[date.getUTCMonth()];
-
-    const year =
-        date.getUTCFullYear();
-
-    const hours = String(
-        date.getUTCHours()
-    ).padStart(2, "0");
-
-    const minutes = String(
-        date.getUTCMinutes()
-    ).padStart(2, "0");
-
-    const seconds = String(
-        date.getUTCSeconds()
-    ).padStart(2, "0");
-
-    return `${day} - ${month} - ${year} | ${hours}:${minutes}:${seconds}`;
+    return new Intl.DateTimeFormat("es-MX", {
+        timeZone: "America/Mexico_City",
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hourCycle: "h23",
+    }).format(date) + " (hora de México)";
 }
 
 export function renderVisibilityHtml(
@@ -65,7 +37,7 @@ export function renderVisibilityHtml(
         report.latest.status === "success"
             ? "Encontrado"
             : report.latest.status === "not_found"
-                ? "No encontrado en Top 50"
+                ? "No encontrado en resultados consultados"
                 : report.latest.status === "blocked"
                     ? "Medición bloqueada"
                     : "Sin dato";
@@ -120,6 +92,30 @@ export function renderVisibilityHtml(
 
     const keywordSummaries =
         report.keywordSummaries ?? [];
+
+    const coverageText =
+        report.latest.resultsReviewed != null
+            ? `${report.latest.resultsReviewed} resultados únicos revisados`
+            : "Sin cobertura registrada";
+
+    const pagesText =
+        report.latest.pagesReviewed != null
+            ? `${report.latest.pagesReviewed} páginas con resultados`
+            : "Sin páginas registradas";
+
+    const readingText =
+        report.latest.status === "success"
+            ? "El sitio oficial fue encontrado en los resultados orgánicos."
+            : report.latest.status === "not_found"
+                ? "El sitio oficial no apareció en los resultados consultados."
+                : "No hay una medición válida disponible.";
+
+    const attemptWarning =
+        report.latestAttempt?.status === "error" ||
+            report.latestAttempt?.status === "blocked"
+            ? `Último intento sin medición válida: ${formatDate(report.latestAttempt.checkedAt)
+            }. Se muestra la última medición válida disponible.`
+            : "";
 
     return `
 <!DOCTYPE html>
@@ -1124,7 +1120,10 @@ export function renderVisibilityHtml(
             indexabilidad y visibilidad
             orgánica
         </p>
-
+        
+        ${attemptWarning
+            ? `<p class="details status-warning">${attemptWarning}</p>`
+            : ""}
     </section>
 
     <section class="grid summary-grid">
@@ -1258,7 +1257,7 @@ export function renderVisibilityHtml(
                     </div>
 
                     <div class="datum-value">
-                        Top 50
+                        ${coverageText}
                     </div>
 
                 </div>
@@ -1320,9 +1319,7 @@ export function renderVisibilityHtml(
             </div>
 
             <div class="details">
-                ${report.latest.status === "success"
-            ? "El sitio oficial fue encontrado en los resultados orgánicos."
-            : "No encontrado dentro de los primeros 50 resultados orgánicos."
+                ${readingText}
         }
             </div>
 
@@ -1404,6 +1401,9 @@ export function renderVisibilityHtml(
                                 ? "No encontrado"
                                 : "Sin dato";
 
+                    const failedAttempt =
+                        summary.latestAttempt?.status === "error" ||
+                        summary.latestAttempt?.status === "blocked";
                     return `
                                 <tr>
 
@@ -1430,6 +1430,12 @@ export function renderVisibilityHtml(
                         }">
                                             ${status}
                                         </span>
+                                        ${failedAttempt
+                            ? `<div class="details">
+        Último intento sin medición válida<br />
+        ${formatDate(summary.latestAttempt!.checkedAt)}
+       </div>`
+                            : ""}
                                     </td>
 
                                     <td>
@@ -1531,15 +1537,15 @@ export function renderVisibilityHtml(
         <div class="card">
 
             <div class="label">
-                Profundidad SERP
+                Resultados revisados
             </div>
 
             <div class="metric">
-                50
+                ${report.latest.resultsReviewed ?? "N/A"}
             </div>
 
             <div class="details">
-                Resultados monitoreados
+                ${pagesText}
             </div>
 
         </div>

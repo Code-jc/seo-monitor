@@ -42,6 +42,11 @@ export interface VisibilityResult {
     matchedUrl: string | null;
     matchedTitle: string | null;
 
+    // Optional for compatibility with older measurements
+    resultsReviewed?: number;
+    pagesReviewed?: number;
+    searchLimit?: number;
+
     // Search context
     searchUrl: string | null;
 

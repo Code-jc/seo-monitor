@@ -28,6 +28,7 @@ jobs:
           tests/matches-target.spec.ts \
           tests/render-visibility-html.spec.ts \
           tests/visibility-history.spec.ts \
+          tests/serpapi-google-unit.spec.ts \
           --project=chromium
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}

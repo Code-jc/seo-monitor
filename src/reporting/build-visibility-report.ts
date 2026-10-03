@@ -51,6 +51,11 @@ export interface VisibilityReport {
 
         checkedAt:
         string | null;
+
+        resultsReviewed?: number | null;
+        pagesReviewed?: number | null;
+        searchLimit?: number | null;
+
     };
 
     change: {
@@ -59,6 +64,11 @@ export interface VisibilityReport {
         totalMeasurements: number;
         measurableMeasurements: number;
     };
+
+    latestAttempt?: {
+        status: VisibilityResult["status"];
+        checkedAt: string;
+    } | null;
 }
 
 export function buildVisibilityReport(
@@ -76,6 +86,12 @@ export function buildVisibilityReport(
             site.name,
 
         keyword,
+        latestAttempt: summary.latestAttempt
+            ? {
+                status: summary.latestAttempt.status,
+                checkedAt: summary.latestAttempt.checkedAt,
+            }
+            : null,
 
         technicalSeo,
 
@@ -111,6 +127,15 @@ export function buildVisibilityReport(
                 summary.latest
                     ?.checkedAt ??
                 null,
+
+            resultsReviewed:
+                summary.latest?.resultsReviewed ?? null,
+
+            pagesReviewed:
+                summary.latest?.pagesReviewed ?? null,
+
+            searchLimit:
+                summary.latest?.searchLimit ?? null,
         },
 
         change: {
