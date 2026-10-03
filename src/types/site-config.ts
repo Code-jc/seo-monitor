@@ -1,3 +1,4 @@
+import type { SearchTarget } from "./search-visibility";
 export type DeviceType = 'desktop' | 'mobile';
 
 export interface MonitoredPage {
@@ -14,6 +15,7 @@ export interface MonitoredKeyword {
   device?: DeviceType;
   country?: string;
   language?: string;
+  location?: string;
 }
 
 export interface SiteContact {
@@ -22,6 +24,9 @@ export interface SiteContact {
   email?: string;
 }
 
+export interface SearchVisibilityConfig {
+  targets: SearchTarget[];
+}
 export interface SiteConfig {
   id: string;
   name: string;
@@ -31,7 +36,11 @@ export interface SiteConfig {
 
   searchConsoleProperty?: string;
 
+  searchVisibility?: SearchVisibilityConfig;
+
   contact?: SiteContact;
   pages: MonitoredPage[];
   keywords: MonitoredKeyword[];
+
+
 }

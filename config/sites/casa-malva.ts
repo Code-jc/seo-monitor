@@ -9,6 +9,14 @@ export const casaMalvaConfig = {
 
     searchConsoleProperty: 'sc-domain:hotelcasamalvagto.com',
 
+    searchVisibility: {
+        targets: [{
+            id: 'website',
+            type: 'website',
+            domain: 'hotelcasamalvagto.com',
+        }],
+    },
+
     contact: {
         phone: '+524731027067',
         whatsapp: '+524731840180',
@@ -19,8 +27,8 @@ export const casaMalvaConfig = {
             name: 'Inicio',
             path: '/',
             expectedTitle: 'Hotel Casa Malva Guanajuato | Sitio oficial',
-            expectedH1: 'Casa Malva – Sweet Stay B&B',
-            shouldBeIndexable: false,
+            expectedH1: 'Hotel Casa Malva Guanajuato',
+            shouldBeIndexable: true,
         },
     ],
 
@@ -31,6 +39,7 @@ export const casaMalvaConfig = {
             device: 'mobile',
             country: 'MX',
             language: 'es',
+            location: "Guanajuato, Guanajuato, Mexico",
         },
         {
             query: 'casa malva guanajuato',
@@ -38,6 +47,15 @@ export const casaMalvaConfig = {
             device: 'mobile',
             country: 'MX',
             language: 'es',
+            location: "Guanajuato, Guanajuato, Mexico",
+        },
+        {
+            query: 'hotel en guanajuato',
+            targetPath: '/',
+            device: 'mobile',
+            country: 'MX',
+            language: 'es',
+            location: "Guanajuato, Guanajuato, Mexico",
         },
         {
             query: 'hotel cerca del museo de las momias',
@@ -45,6 +63,7 @@ export const casaMalvaConfig = {
             device: 'mobile',
             country: 'MX',
             language: 'es',
+            location: "Guanajuato, Guanajuato, Mexico",
         },
         {
             query: 'hotel con estacionamiento en guanajuato',
@@ -52,6 +71,7 @@ export const casaMalvaConfig = {
             device: 'mobile',
             country: 'MX',
             language: 'es',
+            location: "Guanajuato, Guanajuato, Mexico",
         },
     ],
 
