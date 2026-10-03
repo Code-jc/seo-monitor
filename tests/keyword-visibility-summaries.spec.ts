@@ -1,81 +1,35 @@
+import { expect, test } from "@playwright/test";
+import { getKeywordVisibilitySummaries } from "../src/visibility/get-keyword-visibility-summaries";
 import {
-    expect,
-    test,
-} from "@playwright/test";
+    primaryQuery,
+    secondaryQuery,
+    visibilityResults,
+} from "./fixtures/visibility-results";
 
-import {
-    casaMalvaConfig,
-} from "../config/sites/casa-malva";
+test("Group keyword histories and order measurements by date", () => {
+    const summaries = getKeywordVisibilitySummaries(visibilityResults);
 
-import {
-    loadVisibilityResults,
-} from "../src/storage/load-visibility-results";
+    expect(summaries).toHaveLength(2);
 
-import {
-    getKeywordVisibilitySummaries,
-} from "../src/visibility/get-keyword-visibility-summaries";
+    const primary = summaries.find(
+        (summary) => summary.query === primaryQuery
+    );
 
-test(
-    "Casa Malva keyword visibility summaries",
-    () => {
-        const results =
-            loadVisibilityResults(
-                casaMalvaConfig.id
-            );
+    const secondary = summaries.find(
+        (summary) => summary.query === secondaryQuery
+    );
 
-        const summaries =
-            getKeywordVisibilitySummaries(
-                results
-            );
+    expect(primary?.baseline.position).toBe(18);
+    expect(primary?.latest.position).toBe(8);
+    expect(primary?.totalMeasurements).toBe(2);
 
-        console.log(
-            "Keyword summaries:",
-            summaries.map(
-                (summary) => ({
-                    query:
-                        summary.query,
+    expect(secondary?.baseline.status).toBe("not_found");
+    expect(secondary?.latest.status).toBe("success");
+    expect(secondary?.latest.position).toBe(24);
+    expect(secondary?.totalMeasurements).toBe(2);
+    expect(secondary?.measurableMeasurements).toBe(2);
+});
 
-                    baselineStatus:
-                        summary.baseline
-                            .status,
-
-                    baselinePosition:
-                        summary.baseline
-                            .position,
-
-                    latestStatus:
-                        summary.latest
-                            .status,
-
-                    latestPosition:
-                        summary.latest
-                            .position,
-
-                    positionChange:
-                        summary.positionChange,
-
-                    total:
-                        summary.totalMeasurements,
-
-                    measurable:
-                        summary.measurableMeasurements,
-                })
-            )
-        );
-
-        expect(
-            summaries.length
-        ).toBeGreaterThanOrEqual(
-            5
-        );
-
-        for (
-            const summary
-            of summaries
-        ) {
-            expect(
-                summary.query
-            ).toBeTruthy();
-        }
-    }
-);
+test("Return no keyword summaries for empty history", () => {
+    expect(getKeywordVisibilitySummaries([])).toEqual([]);
+});

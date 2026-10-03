@@ -34,8 +34,13 @@ export function getVisibilitySummary(
         };
     }
 
-    const measurableResults =
-        results.filter(isMeasurable);
+    const measurableResults = results
+        .filter(isMeasurable)
+        .sort(
+            (a, b) =>
+                new Date(a.checkedAt).getTime() -
+                new Date(b.checkedAt).getTime()
+        );
 
     if (measurableResults.length === 0) {
         return {

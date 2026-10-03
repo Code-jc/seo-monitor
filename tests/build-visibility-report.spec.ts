@@ -1,32 +1,21 @@
 import { expect, test } from "@playwright/test";
 import { casaMalvaConfig } from "../config/sites/casa-malva";
-import { loadVisibilityResults } from "../src/storage/load-visibility-results";
 import { getVisibilitySummary } from "../src/visibility/get-visibility-summary";
 import { buildVisibilityReport } from "../src/reporting/build-visibility-report";
+import { primaryQuery, primaryResults } from "./fixtures/visibility-results";
 
-test("Build Casa Malva visibility report", async () => {
-    const results = loadVisibilityResults(
-        casaMalvaConfig.id
-    );
-
-    const summary = getVisibilitySummary(results);
-
+test("Build visibility report for the primary keyword", () => {
+    const summary = getVisibilitySummary(primaryResults);
     const report = buildVisibilityReport(
         casaMalvaConfig,
-        casaMalvaConfig.keywords[0].query,
+        primaryQuery,
         summary
     );
 
-    console.log("Visibility report:", report);
-
-    expect(report.siteId).toBe(
-        casaMalvaConfig.id
-    );
-
-    expect(report.keyword).toBe(
-        casaMalvaConfig.keywords[0].query
-    );
-
-    expect(report.change.totalMeasurements)
-        .toBeGreaterThan(0);
+    expect(report.siteId).toBe(casaMalvaConfig.id);
+    expect(report.keyword).toBe(primaryQuery);
+    expect(report.baseline.position).toBe(18);
+    expect(report.latest.position).toBe(8);
+    expect(report.change.totalMeasurements).toBe(2);
+    expect(report.change.measurableMeasurements).toBe(2);
 });

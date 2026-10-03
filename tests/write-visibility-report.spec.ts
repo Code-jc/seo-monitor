@@ -11,11 +11,19 @@ test("Write Casa Malva visibility report", async () => {
         casaMalvaConfig.id
     );
 
-    const summary = getVisibilitySummary(results);
+    const primaryKeyword =
+        casaMalvaConfig.keywords[0].query;
+
+    const primaryResults = results.filter(
+        (result) => result.query === primaryKeyword
+    );
+
+    const summary =
+        getVisibilitySummary(primaryResults);
 
     const report = buildVisibilityReport(
         casaMalvaConfig,
-        casaMalvaConfig.keywords[0].query,
+        primaryKeyword,
         summary
     );
 

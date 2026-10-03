@@ -1,23 +1,27 @@
 import { expect, test } from "@playwright/test";
 import { casaMalvaConfig } from "../config/sites/casa-malva";
-import { loadVisibilityResults } from "../src/storage/load-visibility-results";
+import {
+    primaryQuery,
+    primaryResults,
+    visibilityResults,
+} from "./fixtures/visibility-results";
+
+import { getKeywordVisibilitySummaries } from "../src/visibility/get-keyword-visibility-summaries";
 import { getVisibilitySummary } from "../src/visibility/get-visibility-summary";
 import { buildVisibilityReport } from "../src/reporting/build-visibility-report";
 import { renderVisibilityHtml } from "../src/reporting/render-visibility-html";
 
 test("Render Casa Malva visibility HTML", async () => {
-    const results = loadVisibilityResults(
-        casaMalvaConfig.id
-    );
-
-    const summary = getVisibilitySummary(results);
+    const summary = getVisibilitySummary(primaryResults);
 
     const report = buildVisibilityReport(
         casaMalvaConfig,
-        casaMalvaConfig.keywords[0].query,
+        primaryQuery,
         summary
     );
 
+    report.keywordSummaries =
+        getKeywordVisibilitySummaries(visibilityResults);
     const html = renderVisibilityHtml(report);
 
     expect(html).toContain(
@@ -35,4 +39,10 @@ test("Render Casa Malva visibility HTML", async () => {
     expect(html).toContain(
         "totales"
     );
+
+    expect(html).toContain("casa malva guanajuato");
+    expect(html).toContain("#18");
+    expect(html).toContain("#8");
+    expect(html).toContain("#24");
+
 });

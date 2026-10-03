@@ -1,39 +1,13 @@
-import { test, expect } from "@playwright/test";
-import { casaMalvaConfig } from "../config/sites/casa-malva";
-import { loadVisibilityResults } from "../src/storage/load-visibility-results";
+import { expect, test } from "@playwright/test";
 import { getVisibilitySummary } from "../src/visibility/get-visibility-summary";
+import { primaryResults } from "./fixtures/visibility-results";
 
-test("Casa Malva visibility history", async () => {
-    const results = loadVisibilityResults(
-        casaMalvaConfig.id
-    );
+test("Identify baseline and latest measurement by date", () => {
+    const summary = getVisibilitySummary(primaryResults);
 
-    expect(results.length).toBeGreaterThan(0);
-
-    const summary = getVisibilitySummary(results);
-
-    console.log("Visibility summary:", {
-        totalMeasurements: summary.totalMeasurements,
-
-        baselineStatus:
-            summary.baseline?.status ?? null,
-
-        baselinePosition:
-            summary.baseline?.position ?? null,
-
-        latestStatus:
-            summary.latest?.status ?? null,
-
-        latestPosition:
-            summary.latest?.position ?? null,
-
-        positionChange:
-            summary.positionChange,
-
-        statusChanged:
-            summary.statusChanged,
-    });
-
-    expect(summary.baseline).not.toBeNull();
-    expect(summary.latest).not.toBeNull();
+    expect(summary.totalMeasurements).toBe(2);
+    expect(summary.measurableMeasurements).toBe(2);
+    expect(summary.baseline?.position).toBe(18);
+    expect(summary.latest?.position).toBe(8);
+    expect(summary.statusChanged).toBe(false);
 });
