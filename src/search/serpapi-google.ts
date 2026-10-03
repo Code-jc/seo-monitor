@@ -95,7 +95,7 @@ async function fetchSerpPage(
             signal: AbortSignal.timeout(45_000),
         }
     );
-    );
+
 
     if (!response.ok) {
         throw new Error(
