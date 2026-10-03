@@ -26,7 +26,7 @@ test.describe(
                 keyword.query,
                 async () => {
                     test.setTimeout(
-                        90_000
+                        240_000
                     );
 
                     console.log(

@@ -90,7 +90,11 @@ async function fetchSerpPage(
     );
 
     const response = await fetch(
-        searchUrl.toString()
+        searchUrl.toString(),
+        {
+            signal: AbortSignal.timeout(45_000),
+        }
+    );
     );
 
     if (!response.ok) {
