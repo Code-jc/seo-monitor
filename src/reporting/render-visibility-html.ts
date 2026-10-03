@@ -1571,6 +1571,42 @@ export function renderVisibilityHtml(
         }
     </ul>
 
+        ${(report.technicalSeoHistory ?? []).length > 0
+            ? `
+            <div class="card">
+                <details class="keyword-history technical-history">
+                    <summary>
+                        Ver historial técnico (${report.technicalSeoHistory!.length})
+                    </summary>
+
+                    <ol>
+                        ${report.technicalSeoHistory!.map((audit) => `
+                            <li>
+                                <time datetime="${escapeHtml(audit.checkedAt)}">
+                                    ${escapeHtml(formatDate(audit.checkedAt))}
+                                </time>
+
+                                <div>
+                                    ${audit.passed} / ${audit.total} checks correctos
+                                </div>
+
+                                <ul>
+                                    ${audit.checks.map((check) => `
+                                        <li>
+                                            ${check.passed ? "✓" : "!"}
+                                            ${escapeHtml(check.label)}:
+                                            ${check.passed ? "Correcto" : "Falló"}
+                                        </li>
+                                    `).join("")}
+                                </ul>
+                            </li>
+                        `).join("")}
+                    </ol>
+                </details>
+            </div>
+        `
+            : ""
+        }
     <h2 class="section-title">
         Baseline vs actual
     </h2>
