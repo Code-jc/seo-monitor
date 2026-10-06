@@ -23,6 +23,13 @@ export interface VisibilityReport {
     siteName: string;
 
     keyword: string;
+
+    searchContext?: {
+        device: VisibilityResult["device"];
+        country: string;
+        language: string;
+    } | null;
+
     keywordSummaries?:
     KeywordVisibilitySummary[];
 
@@ -88,6 +95,16 @@ export function buildVisibilityReport(
             site.name,
 
         keyword,
+
+        searchContext: summary.latest
+            ? {
+                device: summary.latest.device,
+                country: summary.latest.country,
+                language: summary.latest.language,
+            }
+            : null,
+
+
         latestAttempt: summary.latestAttempt
             ? {
                 status: summary.latestAttempt.status,
