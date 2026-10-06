@@ -1256,8 +1256,20 @@ export function renderVisibilityHtml(
                 Google Organic · SerpApi
             </div>
 
-            <div class="keyword">
-                ${report.keyword}
+                        <div class="keyword">
+                ${escapeHtml(report.keyword)}
+            </div>
+
+            <div class="details search-context">
+                ${report.searchContext
+            ? `Última medición válida · ${report.searchContext.device === "mobile"
+                ? "Móvil"
+                : "Escritorio"
+            } · País: ${escapeHtml(report.searchContext.country)
+            } · Idioma: ${escapeHtml(report.searchContext.language)
+            }`
+            : "Sin condiciones de búsqueda registradas"
+        }
             </div>
 
             <div class="data-grid">

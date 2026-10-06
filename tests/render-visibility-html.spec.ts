@@ -47,6 +47,23 @@ test("Render Casa Malva visibility HTML", async ({ page }) => {
 
     await page.setContent(html);
 
+    const searchContext = page.locator(".search-context");
+    const latestMeasurement = getVisibilitySummary(primaryResults).latest!;
+
+    await expect(searchContext).toContainText(
+        latestMeasurement.device === "mobile"
+            ? "Móvil"
+            : "Escritorio"
+    );
+
+    await expect(searchContext).toContainText(
+        `País: ${latestMeasurement.country}`
+    );
+
+    await expect(searchContext).toContainText(
+        `Idioma: ${latestMeasurement.language}`
+    );
+
     const histories = page.locator("details.keyword-history");
     await expect(histories).toHaveCount(2);
 
