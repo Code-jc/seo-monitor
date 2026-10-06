@@ -4,21 +4,28 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v4
+
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
+
     - name: Install dependencies
       run: npm ci
+
     - name: Validate TypeScript
       run: npm run typecheck
+
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
+
     - name: Run internal tests
       run: |
         npx playwright test \
@@ -29,7 +36,9 @@ jobs:
           tests/render-visibility-html.spec.ts \
           tests/visibility-history.spec.ts \
           tests/serpapi-google-unit.spec.ts \
+          tests/technical-seo-history.spec.ts \
           --project=chromium
+
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:

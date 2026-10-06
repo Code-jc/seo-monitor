@@ -21,6 +21,10 @@ import {
     getKeywordVisibilitySummaries,
 } from "../visibility/get-keyword-visibility-summaries";
 
+import {
+    loadTechnicalSeoHistory,
+} from "../storage/load-technical-seo-history";
+
 export function writeVisibilityReport(
     report: VisibilityReport
 ): string {
@@ -61,6 +65,10 @@ export function writeVisibilityReport(
         ...report,
 
         technicalSeo,
+
+        technicalSeoHistory:
+            report.technicalSeoHistory ??
+            loadTechnicalSeoHistory(report.siteId),
 
         keywordSummaries,
     };

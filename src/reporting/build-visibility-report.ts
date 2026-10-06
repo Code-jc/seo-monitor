@@ -29,6 +29,8 @@ export interface VisibilityReport {
     technicalSeo:
     TechnicalSeoResult | null;
 
+    technicalSeoHistory?: TechnicalSeoResult[];
+
     baseline: {
         status:
         | VisibilityResult["status"]

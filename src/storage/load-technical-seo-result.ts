@@ -8,12 +8,8 @@ import type {
 export function loadTechnicalSeoResult(
     siteId: string
 ): TechnicalSeoResult | null {
-    const dataRoot =
-        process.env.SEO_DATA_DIR ??
-        path.resolve("data");
-
     const filePath = path.resolve(
-        dataRoot,
+        "data",
         "technical-seo",
         `${siteId}.json`
     );
