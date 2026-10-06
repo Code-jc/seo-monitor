@@ -5,8 +5,12 @@ import type { VisibilityResult } from "../types/search-visibility";
 export function loadVisibilityResults(
     siteId: string
 ): VisibilityResult[] {
+    const dataRoot =
+        process.env.SEO_DATA_DIR ??
+        path.resolve("data");
+
     const filePath = path.resolve(
-        "data",
+        dataRoot,
         "visibility",
         `${siteId}.json`
     );
