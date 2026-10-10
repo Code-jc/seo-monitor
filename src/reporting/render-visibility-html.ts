@@ -1,137 +1,133 @@
 import type { VisibilityReport } from "./build-visibility-report";
 
 function formatDate(value: string | null): string {
-    if (!value) {
-        return "N/A";
-    }
+  if (!value) {
+    return "N/A";
+  }
 
-    const date = new Date(value);
+  const date = new Date(value);
 
-    if (Number.isNaN(date.getTime())) {
-        return value;
-    }
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
 
-    return new Intl.DateTimeFormat("es-MX", {
-        timeZone: "America/Mexico_City",
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hourCycle: "h23",
-    }).format(date) + " (GMT-6)";
+  return (
+    new Intl.DateTimeFormat("es-MX", {
+      timeZone: "America/Mexico_City",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    }).format(date) + " (GMT-6)"
+  );
 }
 
 function escapeHtml(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => {
-        const entities: Record<string, string> = {
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#39;",
-        };
+  return value.replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
 
-        return entities[character]!;
-    });
+    return entities[character]!;
+  });
 }
 
-export function renderVisibilityHtml(
-    report: VisibilityReport
-): string {
-    const positionChange =
-        report.change.positionChange === null
-            ? "N/A"
-            : report.change.positionChange > 0
-                ? `+${report.change.positionChange}`
-                : String(report.change.positionChange);
+export function renderVisibilityHtml(report: VisibilityReport): string {
+  const positionChange =
+    report.change.positionChange === null
+      ? "N/A"
+      : report.change.positionChange > 0
+        ? `+${report.change.positionChange}`
+        : String(report.change.positionChange);
 
-    const latestStatus =
-        report.latest.status === "success"
-            ? "Encontrado"
-            : report.latest.status === "not_found"
-                ? "No encontrado en resultados consultados"
-                : report.latest.status === "blocked"
-                    ? "Medición bloqueada"
-                    : "Sin dato";
+  const latestStatus =
+    report.latest.status === "success"
+      ? "Encontrado"
+      : report.latest.status === "not_found"
+        ? "No encontrado en resultados consultados"
+        : report.latest.status === "blocked"
+          ? "Medición bloqueada"
+          : "Sin dato";
 
-    const latestPosition =
-        report.latest.position !== null
-            ? `#${report.latest.position}`
-            : "Sin ranking";
+  const latestPosition =
+    report.latest.position !== null
+      ? `#${report.latest.position}`
+      : "Sin ranking";
 
-    const baselinePosition =
-        report.baseline.position !== null
-            ? `#${report.baseline.position}`
-            : report.baseline.status === "not_found"
-                ? "Sin ranking"
-                : "Sin dato";
+  const baselinePosition =
+    report.baseline.position !== null
+      ? `#${report.baseline.position}`
+      : report.baseline.status === "not_found"
+        ? "Sin ranking"
+        : "Sin dato";
 
-    const baselineDescription =
-        report.baseline.status === "blocked"
-            ? "Primera medición bloqueada"
-            : report.baseline.status === "not_found"
-                ? "No encontrado en la medición inicial"
-                : report.baseline.status === "success"
-                    ? "Encontrado en la medición inicial"
-                    : "Sin medición inicial";
+  const baselineDescription =
+    report.baseline.status === "blocked"
+      ? "Primera medición bloqueada"
+      : report.baseline.status === "not_found"
+        ? "No encontrado en la medición inicial"
+        : report.baseline.status === "success"
+          ? "Encontrado en la medición inicial"
+          : "Sin medición inicial";
 
-    const technicalSeo =
-        report.technicalSeo;
+  const technicalSeo = report.technicalSeo;
 
-    const technicalPassed =
-        technicalSeo?.passed ?? 0;
+  const technicalPassed = technicalSeo?.passed ?? 0;
 
-    const technicalTotal =
-        technicalSeo?.total ?? 0;
+  const technicalTotal = technicalSeo?.total ?? 0;
 
-    const technicalChecks =
-        technicalSeo?.checks ?? [];
+  const technicalChecks = technicalSeo?.checks ?? [];
 
-    const technicalStatusText =
-        technicalSeo === null
-            ? "Sin auditoría"
-            : technicalPassed === technicalTotal
-                ? "Checks correctos"
-                : `${technicalTotal -
-                technicalPassed
-                } problema(s) detectado(s)`;
+  const technicalAuditDate = technicalSeo?.checkedAt
+    ? formatDate(technicalSeo.checkedAt)
+    : null;
 
-    const baselineDate =
-        formatDate(report.baseline.checkedAt);
+  const technicalStatusText =
+    technicalSeo === null
+      ? "Sin revisión disponible"
+      : technicalPassed === technicalTotal
+        ? "Todas las verificaciones correctas"
+        : `${technicalTotal - technicalPassed} verificaciones pendientes`;
 
-    const latestDate =
-        formatDate(report.latest.checkedAt);
+  const baselineDate = formatDate(report.baseline.checkedAt);
 
-    const keywordSummaries =
-        report.keywordSummaries ?? [];
+  const latestDate = formatDate(report.latest.checkedAt);
 
-    const coverageText =
-        report.latest.resultsReviewed != null
-            ? `${report.latest.resultsReviewed} resultados únicos revisados`
-            : "Sin cobertura registrada";
+  const keywordSummaries = report.keywordSummaries ?? [];
 
-    const pagesText =
-        report.latest.pagesReviewed != null
-            ? `${report.latest.pagesReviewed} páginas con resultados`
-            : "Sin páginas registradas";
+  const coverageText =
+    report.latest.resultsReviewed != null
+      ? `${report.latest.resultsReviewed} resultados únicos revisados`
+      : "Sin cobertura registrada";
 
-    const readingText =
-        report.latest.status === "success"
-            ? "El sitio oficial fue encontrado en los resultados orgánicos."
-            : report.latest.status === "not_found"
-                ? "El sitio oficial no apareció en los resultados consultados."
-                : "No hay una medición válida disponible.";
+  const pagesText =
+    report.latest.pagesReviewed != null
+      ? `${report.latest.pagesReviewed} páginas con resultados`
+      : "Sin páginas registradas";
 
-    const attemptWarning =
-        report.latestAttempt?.status === "error" ||
-            report.latestAttempt?.status === "blocked"
-            ? `Último intento sin medición válida: ${formatDate(report.latestAttempt.checkedAt)
-            }. Se muestra la última medición válida disponible.`
-            : "";
+  const readingText =
+    report.latest.status === "success"
+      ? "El sitio oficial fue encontrado en los resultados orgánicos."
+      : report.latest.status === "not_found"
+        ? "El sitio oficial no apareció en los resultados consultados."
+        : "No hay una medición válida disponible.";
 
-    return `
+  const attemptWarning =
+    report.latestAttempt?.status === "error" ||
+    report.latestAttempt?.status === "blocked"
+      ? `Último intento sin medición válida: ${formatDate(
+          report.latestAttempt.checkedAt,
+        )}. Se muestra la última medición válida disponible.`
+      : "";
+
+  return `
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -453,6 +449,12 @@ export function renderVisibilityHtml(
                 );
         }
 
+        .technical-audit-date {
+    margin-top: 10px;
+    color: #837873;
+    font-size: 12px;
+    line-height: 1.5;
+}
         .card {
             position:
                 relative;
@@ -742,6 +744,29 @@ export function renderVisibilityHtml(
             gap:
                 12px;
         }
+
+        
+/* Espaciado compacto del estado técnico */
+.check-list {
+    margin-bottom: 12px;
+}
+
+/* Contenedor del historial técnico */
+.technical-history-card {
+    padding: 16px 20px;
+    margin: 0;
+}
+
+/* Desplegable del historial técnico */
+.technical-history {
+    margin-top: 0;
+}
+
+.technical-history summary {
+    padding: 0;
+    line-height: 1.5;
+}
+
 
         .check-list li {
             padding:
@@ -1160,32 +1185,48 @@ export function renderVisibilityHtml(
             orgánica
         </p>
         
-        ${attemptWarning
+        ${
+          attemptWarning
             ? `<p class="details status-warning">${attemptWarning}</p>`
-            : ""}
+            : ""
+        }
     </section>
 
     <section class="grid summary-grid">
 
-        <div class="card">
+        
+<div class="card">
 
-            <div class="label">
-                SEO técnico
-            </div>
+    <div class="label">
+        Estado del sitio web
+    </div>
 
-            <div class="metric ${technicalSeo !== null &&
-            technicalPassed === technicalTotal
-            ? "status-ok"
-            : "status-warning"
-        }">
-                ${technicalPassed} / ${technicalTotal}
-            </div>
+    <div class="metric ${
+      technicalSeo !== null && technicalPassed === technicalTotal
+        ? "status-ok"
+        : "status-warning"
+    }">
+        ${
+          technicalSeo === null
+            ? "N/A"
+            : `${technicalPassed} / ${technicalTotal}`
+        }
+    </div>
 
-            <div class="details">
-                ${technicalStatusText}
-            </div>
+    <div class="details">
+        ${technicalStatusText}
+    </div>
 
-        </div>
+    <div class="technical-audit-date">
+        ${
+          technicalAuditDate
+            ? `Última revisión: ${escapeHtml(technicalAuditDate)}`
+            : "Aún no se ha realizado una revisión"
+        }
+    </div>
+
+</div>
+
 
         <div class="card">
 
@@ -1193,10 +1234,11 @@ export function renderVisibilityHtml(
                 Posición orgánica
             </div>
 
-            <div class="metric ${report.latest.status === "success"
-            ? "status-ok"
-            : "status-warning"
-        }">
+            <div class="metric ${
+              report.latest.status === "success"
+                ? "status-ok"
+                : "status-warning"
+            }">
                 ${latestPosition}
             </div>
 
@@ -1261,15 +1303,17 @@ export function renderVisibilityHtml(
             </div>
 
             <div class="details search-context">
-                ${report.searchContext
-            ? `Última medición válida · ${report.searchContext.device === "mobile"
-                ? "Móvil"
-                : "Escritorio"
-            } · País: ${escapeHtml(report.searchContext.country)
-            } · Idioma: ${escapeHtml(report.searchContext.language)
-            }`
-            : "Sin condiciones de búsqueda registradas"
-        }
+                ${
+                  report.searchContext
+                    ? `Última medición válida · ${
+                        report.searchContext.device === "mobile"
+                          ? "Móvil"
+                          : "Escritorio"
+                      } · País: ${escapeHtml(
+                        report.searchContext.country,
+                      )} · Idioma: ${escapeHtml(report.searchContext.language)}`
+                    : "Sin condiciones de búsqueda registradas"
+                }
             </div>
 
             <div class="data-grid">
@@ -1293,10 +1337,11 @@ export function renderVisibilityHtml(
                     </div>
 
                     <div class="datum-value">
-                        ${report.latest.position !== null
-            ? `#${report.latest.position}`
-            : "No encontrada"
-        }
+                        ${
+                          report.latest.position !== null
+                            ? `#${report.latest.position}`
+                            : "No encontrada"
+                        }
                     </div>
 
                 </div>
@@ -1359,14 +1404,16 @@ export function renderVisibilityHtml(
                 Lectura actual
             </div>
 
-            <div class="metric ${report.latest.status === "success"
-            ? "status-ok"
-            : "status-warning"
-        }">
-                ${report.latest.status === "success"
-            ? `#${report.latest.position}`
-            : "Sin ranking"
-        }
+            <div class="metric ${
+              report.latest.status === "success"
+                ? "status-ok"
+                : "status-warning"
+            }">
+                ${
+                  report.latest.status === "success"
+                    ? `#${report.latest.position}`
+                    : "Sin ranking"
+                }
             </div>
 
             <div class="details">
@@ -1416,72 +1463,65 @@ export function renderVisibilityHtml(
         <tbody>
 
             ${keywordSummaries
-            .map(
-                (summary) => {
-                    const baseline =
-                        summary.baseline
-                            .position !== null
-                            ? `#${summary.baseline.position}`
-                            : "Sin ranking";
+              .map((summary) => {
+                const baseline =
+                  summary.baseline.position !== null
+                    ? `#${summary.baseline.position}`
+                    : "Sin ranking";
 
-                    const current =
-                        summary.latest
-                            .position !== null
-                            ? `#${summary.latest.position}`
-                            : "Sin ranking";
+                const current =
+                  summary.latest.position !== null
+                    ? `#${summary.latest.position}`
+                    : "Sin ranking";
 
-                    const change =
-                        summary.positionChange === null
-                            ? "—"
-                            : summary.positionChange > 0
-                                ? `+${summary.positionChange}`
-                                : String(
-                                    summary.positionChange
-                                );
+                const change =
+                  summary.positionChange === null
+                    ? "—"
+                    : summary.positionChange > 0
+                      ? `+${summary.positionChange}`
+                      : String(summary.positionChange);
 
-                    const found =
-                        summary.latest
-                            .status === "success";
+                const found = summary.latest.status === "success";
 
-                    const status =
-                        found
-                            ? "Encontrado"
-                            : summary.latest
-                                .status === "not_found"
-                                ? "No encontrado"
-                                : "Sin dato";
+                const status = found
+                  ? "Encontrado"
+                  : summary.latest.status === "not_found"
+                    ? "No encontrado"
+                    : "Sin dato";
 
-                    const failedAttempt =
-                        summary.latestAttempt?.status === "error" ||
-                        summary.latestAttempt?.status === "blocked";
+                const failedAttempt =
+                  summary.latestAttempt?.status === "error" ||
+                  summary.latestAttempt?.status === "blocked";
 
-                    const history = summary.history ?? [];
+                const history = summary.history ?? [];
 
-                    const historyHtml = history.length === 0
-                        ? ""
-                        : `
+                const historyHtml =
+                  history.length === 0
+                    ? ""
+                    : `
                             <details class="keyword-history">
                                 <summary>
                                     Ver historial (${history.length})
                                 </summary>
                                 <ol>
-                                    ${history.map((measurement) => {
-                            const statusText =
-                                measurement.status === "success"
-                                    ? "Encontrado"
-                                    : measurement.status === "not_found"
-                                        ? "No encontrado en resultados consultados"
-                                        : measurement.status === "blocked"
-                                            ? "Medición bloqueada"
-                                            : "Error de medición";
+                                    ${history
+                                      .map((measurement) => {
+                                        const statusText =
+                                          measurement.status === "success"
+                                            ? "Encontrado"
+                                            : measurement.status === "not_found"
+                                              ? "No encontrado en resultados consultados"
+                                              : measurement.status === "blocked"
+                                                ? "Medición bloqueada"
+                                                : "Error de medición";
 
-                            const positionText =
-                                measurement.status === "success" &&
-                                    measurement.position !== null
-                                    ? ` · #${measurement.position}`
-                                    : "";
+                                        const positionText =
+                                          measurement.status === "success" &&
+                                          measurement.position !== null
+                                            ? ` · #${measurement.position}`
+                                            : "";
 
-                            return `
+                                        return `
                                             <li>
                                                 <time datetime="${escapeHtml(measurement.checkedAt)}">
                                                     ${escapeHtml(formatDate(measurement.checkedAt))}
@@ -1491,12 +1531,13 @@ export function renderVisibilityHtml(
                                                 </div>
                                             </li>
                                         `;
-                        }).join("")}
+                                      })
+                                      .join("")}
                                 </ol>
                             </details>
                         `;
 
-                    return `
+                return `
                                 <tr>
 
                                     <td class="keyword-name">
@@ -1517,18 +1558,19 @@ export function renderVisibilityHtml(
                                     </td>
 
                                     <td>
-                                        <span class="keyword-status ${found
-                            ? "found"
-                            : ""
-                        }">
+                                        <span class="keyword-status ${
+                                          found ? "found" : ""
+                                        }">
                                             ${status}
                                         </span>
-                                        ${failedAttempt
-                            ? `<div class="details">
+                                        ${
+                                          failedAttempt
+                                            ? `<div class="details">
         Último intento sin medición válida<br />
         ${formatDate(summary.latestAttempt!.checkedAt)}
        </div>`
-                            : ""}
+                                            : ""
+                                        }
                                     </td>
 
                                     <td>
@@ -1539,10 +1581,8 @@ export function renderVisibilityHtml(
 
                                 </tr>
                             `;
-                }
-            )
-            .join("")
-        }
+              })
+              .join("")}
 
         </tbody>
 
@@ -1556,23 +1596,21 @@ export function renderVisibilityHtml(
     </h2>
 
     <ul class="check-list">
-        ${technicalChecks.length > 0
+        ${
+          technicalChecks.length > 0
             ? technicalChecks
                 .map(
-                    (check) => `
+                  (check) => `
                             <li>
 
                                 <span class="check">
-                                    ${check.passed
-                            ? "✓"
-                            : "!"
-                        }
+                                    ${check.passed ? "✓" : "!"}
                                 </span>
 
                                 ${check.label}
 
                             </li>
-                        `
+                        `,
                 )
                 .join("")
             : `
@@ -1583,16 +1621,19 @@ export function renderVisibilityHtml(
         }
     </ul>
 
-        ${(report.technicalSeoHistory ?? []).length > 0
+        ${
+          (report.technicalSeoHistory ?? []).length > 0
             ? `
-            <div class="card">
+            <div class="card technical-history-card">
                 <details class="keyword-history technical-history">
                     <summary>
                         Ver historial técnico (${report.technicalSeoHistory!.length})
                     </summary>
 
                     <ol>
-                        ${report.technicalSeoHistory!.map((audit) => `
+                        ${report
+                          .technicalSeoHistory!.map(
+                            (audit) => `
                             <li>
                                 <time datetime="${escapeHtml(audit.checkedAt)}">
                                     ${escapeHtml(formatDate(audit.checkedAt))}
@@ -1603,16 +1644,22 @@ export function renderVisibilityHtml(
                                 </div>
 
                                 <ul>
-                                    ${audit.checks.map((check) => `
+                                    ${audit.checks
+                                      .map(
+                                        (check) => `
                                         <li>
                                             ${check.passed ? "✓" : "!"}
                                             ${escapeHtml(check.label)}:
                                             ${check.passed ? "Correcto" : "Falló"}
                                         </li>
-                                    `).join("")}
+                                    `,
+                                      )
+                                      .join("")}
                                 </ul>
                             </li>
-                        `).join("")}
+                        `,
+                          )
+                          .join("")}
                     </ol>
                 </details>
             </div>
