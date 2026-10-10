@@ -1,76 +1,43 @@
-import {
-    expect,
-    test,
-} from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
-import {
-    casaMalvaConfig,
-} from "../config/sites/casa-malva";
+import { casaMalvaConfig } from "../config/sites/casa-malva";
 
-import {
-    getGoogleVisibilityViaSerpApi,
-} from "../src/search/serpapi-google";
+import { getGoogleVisibilityViaSerpApi } from "../src/search/serpapi-google";
 
-import {
-    saveVisibilityResult,
-} from "../src/storage/save-visibility-result";
+import { saveVisibilityResult } from "../src/storage/save-visibility-result";
 
-test.describe(
-    "Casa Malva visibility via SerpApi",
-    () => {
-        for (
-            const keyword
-            of casaMalvaConfig.keywords
-        ) {
-            test(
-                keyword.query,
-                async () => {
-                    test.setTimeout(
-                        240_000
-                    );
+test.describe("Casa Malva visibility via SerpApi", () => {
+  test.skip(
+    process.env.RUN_LIVE_SERPAPI !== "true",
+    "Live SerpApi measurements are disabled by default.",
+  );
 
-                    console.log(
-                        `\nChecking keyword: "${keyword.query}"`
-                    );
+  for (const keyword of casaMalvaConfig.keywords) {
+    test(keyword.query, async () => {
+      test.setTimeout(240_000);
 
-                    const result =
-                        await getGoogleVisibilityViaSerpApi(
-                            casaMalvaConfig,
-                            keyword
-                        );
+      console.log(`\nChecking keyword: "${keyword.query}"`);
 
-                    console.log(
-                        "SerpApi visibility:",
-                        {
-                            query:
-                                result.query,
+      const result = await getGoogleVisibilityViaSerpApi(
+        casaMalvaConfig,
+        keyword,
+      );
 
-                            status:
-                                result.status,
+      console.log("SerpApi visibility:", {
+        query: result.query,
 
-                            position:
-                                result.position,
+        status: result.status,
 
-                            resultPage:
-                                result.resultPage,
+        position: result.position,
 
-                            matchedUrl:
-                                result.matchedUrl,
-                        }
-                    );
+        resultPage: result.resultPage,
 
-                    saveVisibilityResult(
-                        result
-                    );
+        matchedUrl: result.matchedUrl,
+      });
 
-                    expect([
-                        "success",
-                        "not_found",
-                    ]).toContain(
-                        result.status
-                    );
-                }
-            );
-        }
-    }
-);
+      saveVisibilityResult(result);
+
+      expect(["success", "not_found"]).toContain(result.status);
+    });
+  }
+});
