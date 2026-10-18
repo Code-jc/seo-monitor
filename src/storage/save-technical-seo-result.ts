@@ -8,8 +8,11 @@ import type {
 export function saveTechnicalSeoResult(
     result: TechnicalSeoResult
 ): string {
+    const dataRoot =
+        process.env.SEO_DATA_DIR ?? path.resolve("data");
+
     const directory = path.resolve(
-        "data",
+        dataRoot,
         "technical-seo"
     );
 

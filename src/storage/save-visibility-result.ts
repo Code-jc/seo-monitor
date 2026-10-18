@@ -4,7 +4,10 @@ import type { VisibilityResult } from "../types/search-visibility";
 
 
 export function saveVisibilityResult(result: VisibilityResult): void {
-    const resultDir = path.resolve("data", "visibility");
+    const dataRoot =
+        process.env.SEO_DATA_DIR ?? path.resolve("data");
+
+    const resultDir = path.resolve(dataRoot, "visibility");
 
     fs.mkdirSync(resultDir, {
         recursive: true,
