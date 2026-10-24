@@ -119,7 +119,7 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
      * Sitemap
      */
     const sitemapUrl = new URL(
-      '/wp-sitemap.xml',
+      '/sitemap_index.xml',
       casaMalvaConfig.baseUrl,
     ).toString();
 
