@@ -53,6 +53,8 @@ async function fetchSerpPage(
 
   searchUrl.searchParams.set("start", String(start));
 
+  searchUrl.searchParams.set("no_cache", "true");
+
   searchUrl.searchParams.set("api_key", apiKey);
 
   const response = await fetch(searchUrl.toString(), {
