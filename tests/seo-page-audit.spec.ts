@@ -253,6 +253,9 @@ test.describe('SEO Audit: individual pages', () => {
 
       // HTTP
       const status = response?.status() ?? null;
+      if (status === 429) {
+        throw new Error(`Auditoría bloqueada por HTTP 429: ${url}`);
+      }
 
       expect.soft(status, `Invalid HTTP status: ${url}`).toBe(200);
 
