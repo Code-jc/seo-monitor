@@ -1,11 +1,11 @@
-import fs from "node:fs";
-import path from "node:path";
+import fs from 'node:fs';
+import path from 'node:path';
 
-import { casaMalvaConfig } from "../../config/sites/casa-malva";
-import { loadVisibilityResults } from "../storage/load-visibility-results";
-import { getVisibilitySummary } from "../visibility/get-visibility-summary";
-import { buildVisibilityReport } from "../reporting/build-visibility-report";
-import { writeVisibilityReport } from "../reporting/write-visibility-report";
+import { casaMalvaConfig } from '../../config/sites/casa-malva';
+import { loadVisibilityResults } from '../storage/load-visibility-results';
+import { getVisibilitySummary } from '../visibility/get-visibility-summary';
+import { buildVisibilityReport } from '../reporting/build-visibility-report';
+import { writeVisibilityReport } from '../reporting/write-visibility-report';
 
 function main(): void {
   const site = casaMalvaConfig;
@@ -18,10 +18,12 @@ function main(): void {
     throw new Error(`No visibility data available for ${site.id}.`);
   }
 
-  const primaryKeyword = site.keywords[0];
+  const primaryKeyword = site.keywords.find(
+    (keyword) => keyword.query === 'hotel casa malva guanajuato',
+  );
 
   if (!primaryKeyword) {
-    throw new Error("No primary keyword configured.");
+    throw new Error('No primary keyword configured.');
   }
 
   const keywordResults = results.filter(
@@ -39,16 +41,16 @@ function main(): void {
   const outputPath = writeVisibilityReport(report);
 
   if (!fs.existsSync(outputPath) || fs.statSync(outputPath).size === 0) {
-    throw new Error("SEO report generation failed.");
+    throw new Error('SEO report generation failed.');
   }
 
   console.log(`Report generated: ${path.resolve(outputPath)}`);
 
   console.log(`Measurements loaded: ${results.length}`);
 
-  console.log(`Latest measurement: ${summary.latest?.checkedAt ?? "none"}`);
+  console.log(`Latest measurement: ${summary.latest?.checkedAt ?? 'none'}`);
 
-  console.log(`Latest attempt: ${summary.latestAttempt?.status ?? "none"}`);
+  console.log(`Latest attempt: ${summary.latestAttempt?.status ?? 'none'}`);
 }
 
 main();

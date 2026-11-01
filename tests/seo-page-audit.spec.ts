@@ -9,7 +9,12 @@ import type { TechnicalSeoCheck } from '../src/types/technical-seo';
 import { extractPageSeo } from '../src/seo/extract-page-seo';
 
 test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
-  test('technical SEO baseline', async ({ page, request }) => {
+  test('technical SEO baseline', async ({ page, request }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== 'chromium',
+      'El baseline SEO solo se registra en Chromium',
+    );
+
     const monitoredPage = casaMalvaConfig.pages[0];
 
     if (!monitoredPage) {
@@ -167,12 +172,14 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
       );
     }
 
-    expect
-      .soft(
-        sitemapPassed,
-        `Sitemap unavailable: HTTP ${sitemapResponse.status()}`,
-      )
-      .toBe(true);
+    if (!sitemapBlocked) {
+      expect
+        .soft(
+          sitemapPassed,
+          `Sitemap unavailable: HTTP ${sitemapResponse.status()}`,
+        )
+        .toBe(true);
+    }
 
     /*
      * Structured result
@@ -212,6 +219,11 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
         id: 'sitemap',
         label: 'Sitemap XML',
         passed: sitemapPassed,
+        status: sitemapBlocked
+          ? 'blocked'
+          : sitemapPassed
+            ? 'passed'
+            : 'failed',
       },
     ];
 

@@ -66,6 +66,14 @@ export const casaMalvaConfig = {
 
   keywords: [
     {
+      query: 'casa malva',
+      targetPath: '/',
+      device: 'mobile',
+      country: 'MX',
+      language: 'es',
+      location: 'Guanajuato, Guanajuato, Mexico',
+    },
+    {
       query: 'hotel casa malva guanajuato',
       targetPath: '/',
       device: 'mobile',
@@ -99,6 +107,38 @@ export const casaMalvaConfig = {
     },
     {
       query: 'hotel con estacionamiento en guanajuato',
+      targetPath: '/',
+      device: 'mobile',
+      country: 'MX',
+      language: 'es',
+      location: 'Guanajuato, Guanajuato, Mexico',
+    },
+    {
+      query: 'casa malva sweet stay',
+      targetPath: '/',
+      device: 'mobile',
+      country: 'MX',
+      language: 'es',
+      location: 'Guanajuato, Guanajuato, Mexico',
+    },
+    {
+      query: 'hotel casa malva',
+      targetPath: '/',
+      device: 'mobile',
+      country: 'MX',
+      language: 'es',
+      location: 'Guanajuato, Guanajuato, Mexico',
+    },
+    {
+      query: 'hotel malva',
+      targetPath: '/',
+      device: 'mobile',
+      country: 'MX',
+      language: 'es',
+      location: 'Guanajuato, Guanajuato, Mexico',
+    },
+    {
+      query: 'hoteles en guanajuato',
       targetPath: '/',
       device: 'mobile',
       country: 'MX',
