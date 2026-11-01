@@ -6,6 +6,8 @@ import { saveTechnicalSeoResult } from '../src/storage/save-technical-seo-result
 
 import type { TechnicalSeoCheck } from '../src/types/technical-seo';
 
+import { extractPageSeo } from '../src/seo/extract-page-seo';
+
 test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
   test('technical SEO baseline', async ({ page, request }) => {
     const monitoredPage = casaMalvaConfig.pages[0];
@@ -159,14 +161,18 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
 
     if (sitemapBlocked) {
       console.warn(
-        `Sitemap temporarily blocked (429). ` +
-          `Retry-After: ${sitemapResponse.headers()['retry-after'] ?? 'unknown'}`,
+        `Sitemap BLOCKED (429). Retry-After: ${
+          sitemapResponse.headers()['retry-after'] ?? 'unknown'
+        }`,
       );
-    } else {
-      expect
-        .soft(sitemapPassed, `Sitemap returned ${sitemapResponse.status()}`)
-        .toBe(true);
     }
+
+    expect
+      .soft(
+        sitemapPassed,
+        `Sitemap unavailable: HTTP ${sitemapResponse.status()}`,
+      )
+      .toBe(true);
 
     /*
      * Structured result
@@ -241,108 +247,68 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
 
 test.describe('SEO Audit: individual pages', () => {
   for (const monitoredPage of casaMalvaConfig.pages) {
-    test(`${monitoredPage.name} - SEO validation`, async ({ page }) => {
+    test(`${monitoredPage.name} - SEO validation`, async ({ request }) => {
       const url = new URL(
         monitoredPage.path,
         casaMalvaConfig.baseUrl,
       ).toString();
 
-      const response = await page.goto(url, {
-        waitUntil: 'domcontentloaded',
+      const response = await request.get(url, {
+        failOnStatusCode: false,
+        maxRetries: 0,
       });
 
-      // HTTP
-      const status = response?.status() ?? null;
+      const status = response.status();
+
       if (status === 429) {
-        throw new Error(`Auditoría bloqueada por HTTP 429: ${url}`);
+        const retryAfter = response.headers()['retry-after'] ?? 'unknown';
+
+        throw new Error(
+          `SEO audit BLOCKED: HTTP 429 | ${url} | Retry-After: ${retryAfter}`,
+        );
       }
 
-      expect.soft(status, `Invalid HTTP status: ${url}`).toBe(200);
+      expect(status, `Invalid HTTP status: ${url}`).toBe(200);
+
+      const seo = extractPageSeo(
+        await response.text(),
+        url,
+        status,
+        response.headers(),
+      );
 
       // Title
-      const title = (await page.title()).trim();
-
-      expect.soft(title, `Empty title: ${url}`).not.toBe('');
+      expect.soft(seo.title, `Empty title: ${url}`).not.toBe('');
 
       if (monitoredPage.expectedTitle) {
         expect
-          .soft(title, `Unexpected title: ${url}`)
+          .soft(seo.title, `Unexpected title: ${url}`)
           .toBe(monitoredPage.expectedTitle);
       }
 
       // H1
-      const h1Elements = page.locator('h1');
-      const h1Count = await h1Elements.count();
-
-      expect.soft(h1Count, `Expected one H1: ${url}`).toBe(1);
-
-      const h1 =
-        h1Count > 0
-          ? ((await h1Elements.first().textContent()) ?? '').trim()
-          : '';
-
-      expect.soft(h1, `Empty H1: ${url}`).not.toBe('');
+      expect.soft(seo.h1Count, `Expected one H1: ${url}`).toBe(1);
+      expect.soft(seo.h1, `Empty H1: ${url}`).not.toBe('');
 
       if (monitoredPage.expectedH1) {
-        expect.soft(h1, `Unexpected H1: ${url}`).toBe(monitoredPage.expectedH1);
+        expect
+          .soft(seo.h1, `Unexpected H1: ${url}`)
+          .toBe(monitoredPage.expectedH1);
       }
 
       // Canonical
-      const canonicalElements = page.locator('link[rel="canonical"]');
+      expect.soft(seo.canonicalCount, `Canonical count: ${url}`).toBe(1);
 
-      expect
-        .soft(await canonicalElements.count(), `Canonical count: ${url}`)
-        .toBe(1);
+      expect.soft(seo.canonical, `Canonical mismatch: ${url}`).toBe(url);
 
-      const canonical = await canonicalElements
-        .first()
-        .getAttribute('href')
-        .catch(() => null);
-
-      let normalizedCanonical: string | null = null;
-
-      try {
-        if (canonical) {
-          normalizedCanonical = new URL(canonical, url).href;
-        }
-      } catch {
-        normalizedCanonical = null;
-      }
-
-      expect.soft(normalizedCanonical, `Canonical mismatch: ${url}`).toBe(url);
-
-      // Robots meta + HTTP header
-      const robotsMeta =
-        (await page
-          .locator('meta[name="robots"]')
-          .first()
-          .getAttribute('content')
-          .catch(() => null)) ?? '';
-
-      const xRobotsTag = response?.headers()['x-robots-tag'] ?? '';
-
-      const robots = `${robotsMeta},${xRobotsTag}`.toLowerCase();
-
-      const noindex = /(?:^|[,;\s])noindex(?:$|[,;\s])/i.test(robots);
-
+      // Indexability
       if (monitoredPage.shouldBeIndexable !== undefined) {
         expect
-          .soft(noindex, `Indexability mismatch: ${url}`)
+          .soft(seo.noindex, `Indexability mismatch: ${url}`)
           .toBe(!monitoredPage.shouldBeIndexable);
       }
 
-      console.log('SEO Page Audit:', {
-        page: monitoredPage.name,
-        url,
-        status,
-        title,
-        h1,
-        h1Count,
-        canonical: normalizedCanonical,
-        robotsMeta,
-        xRobotsTag,
-        noindex,
-      });
+      console.log('SEO Page Audit:', seo);
     });
   }
 });
