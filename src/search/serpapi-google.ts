@@ -1,13 +1,13 @@
-import "dotenv/config";
+import 'dotenv/config';
 
-import type { MonitoredKeyword, SiteConfig } from "../types/site-config";
+import type { MonitoredKeyword, SiteConfig } from '../types/site-config';
 
 import type {
   SearchTarget,
   VisibilityResult,
-} from "../types/search-visibility";
+} from '../types/search-visibility';
 
-import { matchesTarget } from "./matches-target";
+import { matchesTarget } from './matches-target';
 
 interface SerpApiOrganicResult {
   position?: number;
@@ -30,32 +30,32 @@ async function fetchSerpPage(
   const apiKey = process.env.SERPAPI_API_KEY;
 
   if (!apiKey) {
-    throw new Error("SERPAPI_API_KEY is not configured.");
+    throw new Error('SERPAPI_API_KEY is not configured.');
   }
 
-  const searchUrl = new URL("https://serpapi.com/search.json");
+  const searchUrl = new URL('https://serpapi.com/search.json');
 
-  searchUrl.searchParams.set("engine", "google");
+  searchUrl.searchParams.set('engine', 'google');
 
-  searchUrl.searchParams.set("q", keyword.query);
+  searchUrl.searchParams.set('q', keyword.query);
 
-  searchUrl.searchParams.set("hl", keyword.language ?? "es");
+  searchUrl.searchParams.set('hl', keyword.language ?? 'es');
 
-  searchUrl.searchParams.set("gl", (keyword.country ?? "MX").toLowerCase());
+  searchUrl.searchParams.set('gl', (keyword.country ?? 'MX').toLowerCase());
 
-  searchUrl.searchParams.set("device", keyword.device ?? "desktop");
+  searchUrl.searchParams.set('device', keyword.device ?? 'desktop');
 
   if (keyword.location) {
-    searchUrl.searchParams.set("location", keyword.location);
+    searchUrl.searchParams.set('location', keyword.location);
   }
 
-  searchUrl.searchParams.set("num", String(RESULTS_PER_PAGE));
+  searchUrl.searchParams.set('num', String(RESULTS_PER_PAGE));
 
-  searchUrl.searchParams.set("start", String(start));
+  searchUrl.searchParams.set('start', String(start));
 
-  searchUrl.searchParams.set("no_cache", "true");
+  searchUrl.searchParams.set('no_cache', 'true');
 
-  searchUrl.searchParams.set("api_key", apiKey);
+  searchUrl.searchParams.set('api_key', apiKey);
 
   const response = await fetch(searchUrl.toString(), {
     signal: AbortSignal.timeout(30_000),
@@ -79,10 +79,14 @@ export async function getGoogleVisibilityViaSerpApi(
   keyword: MonitoredKeyword,
 ): Promise<VisibilityResult> {
   const websiteTarget: SearchTarget = {
-    id: "website",
-    type: "website",
+    id: 'website',
+    type: 'website',
     domain: new URL(site.baseUrl).hostname,
   };
+
+  const expectedPath =
+    new URL(keyword.targetPath, site.baseUrl).pathname.replace(/\/+$/, '') ||
+    '/';
 
   let matchedResult: SerpApiOrganicResult | undefined;
 
@@ -121,11 +125,11 @@ export async function getGoogleVisibilityViaSerpApi(
     console.log(
       `SerpApi page ${start / RESULTS_PER_PAGE + 1}:`,
       organicResults.length,
-      "organic results",
+      'organic results',
     );
 
     if (organicResults.length === 0) {
-      console.log("No more organic results. Stopping pagination.");
+      console.log('No more organic results. Stopping pagination.');
 
       break;
     }
@@ -139,11 +143,18 @@ export async function getGoogleVisibilityViaSerpApi(
     }
 
     const matchedIndex = organicResults.findIndex((result) => {
-      if (!result.link) {
+      if (!result.link || !matchesTarget(result.link, websiteTarget)) {
         return false;
       }
 
-      return matchesTarget(result.link, websiteTarget);
+      try {
+        const resultPath =
+          new URL(result.link).pathname.replace(/\/+$/, '') || '/';
+
+        return resultPath === expectedPath;
+      } catch {
+        return false;
+      }
     });
 
     if (matchedIndex >= 0) {
@@ -165,21 +176,21 @@ export async function getGoogleVisibilityViaSerpApi(
 
   return {
     siteId: site.id,
-    provider: "google",
+    provider: 'google',
 
     query: keyword.query,
-    country: keyword.country ?? "MX",
-    language: keyword.language ?? "es",
-    device: keyword.device ?? "desktop",
+    country: keyword.country ?? 'MX',
+    language: keyword.language ?? 'es',
+    device: keyword.device ?? 'desktop',
 
     targetId: websiteTarget.id,
     targetType: websiteTarget.type,
 
     status: matchedResult
-      ? "success"
+      ? 'success'
       : requestFailed || reviewedUrls.size === 0
-        ? "error"
-        : "not_found",
+        ? 'error'
+        : 'not_found',
 
     found: Boolean(matchedResult),
 
