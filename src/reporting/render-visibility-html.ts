@@ -1,8 +1,8 @@
-import type { VisibilityReport } from "./build-visibility-report";
+import type { VisibilityReport } from './build-visibility-report';
 
 function formatDate(value: string | null): string {
   if (!value) {
-    return "N/A";
+    return 'N/A';
   }
 
   const date = new Date(value);
@@ -12,27 +12,27 @@ function formatDate(value: string | null): string {
   }
 
   return (
-    new Intl.DateTimeFormat("es-MX", {
-      timeZone: "America/Mexico_City",
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hourCycle: "h23",
-    }).format(date) + " (GMT-6)"
+    new Intl.DateTimeFormat('es-MX', {
+      timeZone: 'America/Mexico_City',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23',
+    }).format(date) + ' (GMT-6)'
   );
 }
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => {
     const entities: Record<string, string> = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
     };
 
     return entities[character]!;
@@ -42,40 +42,40 @@ function escapeHtml(value: string): string {
 export function renderVisibilityHtml(report: VisibilityReport): string {
   const positionChange =
     report.change.positionChange === null
-      ? "N/A"
+      ? 'N/A'
       : report.change.positionChange > 0
         ? `+${report.change.positionChange}`
         : String(report.change.positionChange);
 
   const latestStatus =
-    report.latest.status === "success"
-      ? "Encontrado"
-      : report.latest.status === "not_found"
-        ? "No encontrado en resultados consultados"
-        : report.latest.status === "blocked"
-          ? "Medición bloqueada"
-          : "Sin dato";
+    report.latest.status === 'success'
+      ? 'Encontrado'
+      : report.latest.status === 'not_found'
+        ? 'No encontrado en resultados consultados'
+        : report.latest.status === 'blocked'
+          ? 'Medición bloqueada'
+          : 'Sin dato';
 
   const latestPosition =
     report.latest.position !== null
       ? `#${report.latest.position}`
-      : "Sin ranking";
+      : 'Sin ranking';
 
   const baselinePosition =
     report.baseline.position !== null
       ? `#${report.baseline.position}`
-      : report.baseline.status === "not_found"
-        ? "Sin ranking"
-        : "Sin dato";
+      : report.baseline.status === 'not_found'
+        ? 'Sin ranking'
+        : 'Sin dato';
 
   const baselineDescription =
-    report.baseline.status === "blocked"
-      ? "Primera medición bloqueada"
-      : report.baseline.status === "not_found"
-        ? "No encontrado en la medición inicial"
-        : report.baseline.status === "success"
-          ? "Encontrado en la medición inicial"
-          : "Sin medición inicial";
+    report.baseline.status === 'blocked'
+      ? 'Primera medición bloqueada'
+      : report.baseline.status === 'not_found'
+        ? 'No encontrado en la medición inicial'
+        : report.baseline.status === 'success'
+          ? 'Encontrado en la medición inicial'
+          : 'Sin medición inicial';
 
   const technicalSeo = report.technicalSeo;
 
@@ -85,16 +85,28 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
 
   const technicalChecks = technicalSeo?.checks ?? [];
 
+  const technicalBlockedCount = technicalChecks.filter(
+    (check) => check.status === 'blocked',
+  ).length;
+
+  const technicalFailedCount = technicalChecks.filter(
+    (check) => !check.passed && check.status !== 'blocked',
+  ).length;
+
   const technicalAuditDate = technicalSeo?.checkedAt
     ? formatDate(technicalSeo.checkedAt)
     : null;
 
   const technicalStatusText =
     technicalSeo === null
-      ? "Sin revisión disponible"
-      : technicalPassed === technicalTotal
-        ? "Todas las verificaciones correctas"
-        : `${technicalTotal - technicalPassed} verificaciones pendientes`;
+      ? 'Sin revisión disponible'
+      : technicalBlockedCount > 0 && technicalFailedCount > 0
+        ? `${technicalFailedCount} fallidas · ${technicalBlockedCount} bloqueadas`
+        : technicalBlockedCount > 0
+          ? `${technicalBlockedCount} verificaciones bloqueadas (HTTP 429)`
+          : technicalFailedCount > 0
+            ? `${technicalFailedCount} verificaciones fallidas`
+            : 'Todas las verificaciones correctas';
 
   const baselineDate = formatDate(report.baseline.checkedAt);
 
@@ -105,27 +117,27 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
   const coverageText =
     report.latest.resultsReviewed != null
       ? `${report.latest.resultsReviewed} resultados únicos revisados`
-      : "Sin cobertura registrada";
+      : 'Sin cobertura registrada';
 
   const pagesText =
     report.latest.pagesReviewed != null
       ? `${report.latest.pagesReviewed} páginas con resultados`
-      : "Sin páginas registradas";
+      : 'Sin páginas registradas';
 
   const readingText =
-    report.latest.status === "success"
-      ? "El sitio oficial fue encontrado en los resultados orgánicos."
-      : report.latest.status === "not_found"
-        ? "El sitio oficial no apareció en los resultados consultados."
-        : "No hay una medición válida disponible.";
+    report.latest.status === 'success'
+      ? 'El sitio oficial fue encontrado en los resultados orgánicos.'
+      : report.latest.status === 'not_found'
+        ? 'El sitio oficial no apareció en los resultados consultados.'
+        : 'No hay una medición válida disponible.';
 
   const attemptWarning =
-    report.latestAttempt?.status === "error" ||
-    report.latestAttempt?.status === "blocked"
+    report.latestAttempt?.status === 'error' ||
+    report.latestAttempt?.status === 'blocked'
       ? `Último intento sin medición válida: ${formatDate(
           report.latestAttempt.checkedAt,
         )}. Se muestra la última medición válida disponible.`
-      : "";
+      : '';
 
   return `
 <!DOCTYPE html>
@@ -1188,7 +1200,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
         ${
           attemptWarning
             ? `<p class="details status-warning">${attemptWarning}</p>`
-            : ""
+            : ''
         }
     </section>
 
@@ -1203,12 +1215,12 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
 
     <div class="metric ${
       technicalSeo !== null && technicalPassed === technicalTotal
-        ? "status-ok"
-        : "status-warning"
+        ? 'status-ok'
+        : 'status-warning'
     }">
         ${
           technicalSeo === null
-            ? "N/A"
+            ? 'N/A'
             : `${technicalPassed} / ${technicalTotal}`
         }
     </div>
@@ -1221,7 +1233,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
         ${
           technicalAuditDate
             ? `Última revisión: ${escapeHtml(technicalAuditDate)}`
-            : "Aún no se ha realizado una revisión"
+            : 'Aún no se ha realizado una revisión'
         }
     </div>
 
@@ -1235,9 +1247,9 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
             </div>
 
             <div class="metric ${
-              report.latest.status === "success"
-                ? "status-ok"
-                : "status-warning"
+              report.latest.status === 'success'
+                ? 'status-ok'
+                : 'status-warning'
             }">
                 ${latestPosition}
             </div>
@@ -1306,13 +1318,13 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                 ${
                   report.searchContext
                     ? `Última medición válida · ${
-                        report.searchContext.device === "mobile"
-                          ? "Móvil"
-                          : "Escritorio"
+                        report.searchContext.device === 'mobile'
+                          ? 'Móvil'
+                          : 'Escritorio'
                       } · País: ${escapeHtml(
                         report.searchContext.country,
                       )} · Idioma: ${escapeHtml(report.searchContext.language)}`
-                    : "Sin condiciones de búsqueda registradas"
+                    : 'Sin condiciones de búsqueda registradas'
                 }
             </div>
 
@@ -1340,7 +1352,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                         ${
                           report.latest.position !== null
                             ? `#${report.latest.position}`
-                            : "No encontrada"
+                            : 'No encontrada'
                         }
                     </div>
 
@@ -1405,14 +1417,14 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
             </div>
 
             <div class="metric ${
-              report.latest.status === "success"
-                ? "status-ok"
-                : "status-warning"
+              report.latest.status === 'success'
+                ? 'status-ok'
+                : 'status-warning'
             }">
                 ${
-                  report.latest.status === "success"
+                  report.latest.status === 'success'
                     ? `#${report.latest.position}`
-                    : "Sin ranking"
+                    : 'Sin ranking'
                 }
             </div>
 
@@ -1467,37 +1479,37 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                 const baseline =
                   summary.baseline.position !== null
                     ? `#${summary.baseline.position}`
-                    : "Sin ranking";
+                    : 'Sin ranking';
 
                 const current =
                   summary.latest.position !== null
                     ? `#${summary.latest.position}`
-                    : "Sin ranking";
+                    : 'Sin ranking';
 
                 const change =
                   summary.positionChange === null
-                    ? "—"
+                    ? '—'
                     : summary.positionChange > 0
                       ? `+${summary.positionChange}`
                       : String(summary.positionChange);
 
-                const found = summary.latest.status === "success";
+                const found = summary.latest.status === 'success';
 
                 const status = found
-                  ? "Encontrado"
-                  : summary.latest.status === "not_found"
-                    ? "No encontrado"
-                    : "Sin dato";
+                  ? 'Encontrado'
+                  : summary.latest.status === 'not_found'
+                    ? 'No encontrado'
+                    : 'Sin dato';
 
                 const failedAttempt =
-                  summary.latestAttempt?.status === "error" ||
-                  summary.latestAttempt?.status === "blocked";
+                  summary.latestAttempt?.status === 'error' ||
+                  summary.latestAttempt?.status === 'blocked';
 
                 const history = summary.history ?? [];
 
                 const historyHtml =
                   history.length === 0
-                    ? ""
+                    ? ''
                     : `
                             <details class="keyword-history">
                                 <summary>
@@ -1507,19 +1519,19 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                                     ${history
                                       .map((measurement) => {
                                         const statusText =
-                                          measurement.status === "success"
-                                            ? "Encontrado"
-                                            : measurement.status === "not_found"
-                                              ? "No encontrado en resultados consultados"
-                                              : measurement.status === "blocked"
-                                                ? "Medición bloqueada"
-                                                : "Error de medición";
+                                          measurement.status === 'success'
+                                            ? 'Encontrado'
+                                            : measurement.status === 'not_found'
+                                              ? 'No encontrado en resultados consultados'
+                                              : measurement.status === 'blocked'
+                                                ? 'Medición bloqueada'
+                                                : 'Error de medición';
 
                                         const positionText =
-                                          measurement.status === "success" &&
+                                          measurement.status === 'success' &&
                                           measurement.position !== null
                                             ? ` · #${measurement.position}`
-                                            : "";
+                                            : '';
 
                                         return `
                                             <li>
@@ -1532,7 +1544,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                                             </li>
                                         `;
                                       })
-                                      .join("")}
+                                      .join('')}
                                 </ol>
                             </details>
                         `;
@@ -1559,7 +1571,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
 
                                     <td>
                                         <span class="keyword-status ${
-                                          found ? "found" : ""
+                                          found ? 'found' : ''
                                         }">
                                             ${status}
                                         </span>
@@ -1569,7 +1581,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
         Último intento sin medición válida<br />
         ${formatDate(summary.latestAttempt!.checkedAt)}
        </div>`
-                                            : ""
+                                            : ''
                                         }
                                     </td>
 
@@ -1582,7 +1594,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                                 </tr>
                             `;
               })
-              .join("")}
+              .join('')}
 
         </tbody>
 
@@ -1604,7 +1616,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                             <li>
 
                                 <span class="check">
-                                    ${check.passed ? "✓" : "!"}
+                                    ${check.passed ? '✓' : '!'}
                                 </span>
 
                                 ${check.label}
@@ -1612,7 +1624,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                             </li>
                         `,
                 )
-                .join("")
+                .join('')
             : `
                     <li>
                         Sin auditoría técnica disponible
@@ -1648,23 +1660,23 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                                       .map(
                                         (check) => `
                                         <li>
-                                            ${check.passed ? "✓" : "!"}
+                                            ${check.passed ? '✓' : '!'}
                                             ${escapeHtml(check.label)}:
-                                            ${check.passed ? "Correcto" : "Falló"}
+                                            ${check.passed ? 'Correcto' : 'Falló'}
                                         </li>
                                     `,
                                       )
-                                      .join("")}
+                                      .join('')}
                                 </ul>
                             </li>
                         `,
                           )
-                          .join("")}
+                          .join('')}
                     </ol>
                 </details>
             </div>
         `
-            : ""
+            : ''
         }
     <h2 class="section-title">
         Baseline vs actual
@@ -1717,7 +1729,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
             </div>
 
             <div class="metric">
-                ${report.latest.resultsReviewed ?? "N/A"}
+                ${report.latest.resultsReviewed ?? 'N/A'}
             </div>
 
             <div class="details">
