@@ -1,13 +1,96 @@
-import { expect, test } from '@playwright/test';
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type APIResponse,
+} from '@playwright/test';
 
 import { casaMalvaConfig } from '../config/sites/casa-malva';
-
 import { saveTechnicalSeoResult } from '../src/storage/save-technical-seo-result';
-
 import type { TechnicalSeoCheck } from '../src/types/technical-seo';
-
 import { extractPageSeo } from '../src/seo/extract-page-seo';
 
+/*
+ * Technical SEO audit configuration
+ */
+const REQUEST_INTERVAL_MS = 3_000;
+const MAX_RETRIES = 2;
+const MAX_RETRY_AFTER_MS = 60_000;
+const TEST_TIMEOUT_MS = 150_000;
+
+let lastRequestAt = 0;
+
+// Override the global fullyParallel setting for this file.
+test.describe.configure({ mode: 'default' });
+
+test.setTimeout(TEST_TIMEOUT_MS);
+
+/*
+ * HTTP helpers
+ */
+async function wait(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function getWithRateLimit(
+  request: APIRequestContext,
+  url: string,
+): Promise<APIResponse> {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const elapsed = Date.now() - lastRequestAt;
+
+    if (elapsed < REQUEST_INTERVAL_MS) {
+      await wait(REQUEST_INTERVAL_MS - elapsed);
+    }
+
+    lastRequestAt = Date.now();
+
+    const response = await request.get(url, {
+      failOnStatusCode: false,
+      timeout: 20_000,
+    });
+
+    if (response.status() !== 429) {
+      return response;
+    }
+
+    const retryAfter = response.headers()['retry-after'];
+
+    let waitMs = 15_000 * (attempt + 1);
+
+    if (retryAfter) {
+      const seconds = Number(retryAfter);
+
+      waitMs = Number.isFinite(seconds)
+        ? seconds * 1_000
+        : Date.parse(retryAfter) - Date.now();
+    }
+
+    console.warn(
+      `[BLOCKED] HTTP 429: ${url} | Attempt ${attempt + 1}/${MAX_RETRIES + 1}`,
+    );
+
+    if (
+      attempt === MAX_RETRIES ||
+      !Number.isFinite(waitMs) ||
+      waitMs > MAX_RETRY_AFTER_MS
+    ) {
+      return response;
+    }
+
+    await wait(Math.max(1_000, waitMs));
+  }
+
+  throw new Error('Unexpected retry state');
+}
+
+function isBlocked(status: number): boolean {
+  return status === 429;
+}
+
+/*
+ * Technical SEO baseline
+ */
 test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
   test('technical SEO baseline', async ({ page, request }, testInfo) => {
     test.skip(
@@ -25,6 +108,7 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
 
     const response = await page.goto(url, {
       waitUntil: 'domcontentloaded',
+      timeout: 30_000,
     });
 
     /*
@@ -32,7 +116,11 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
      */
     const httpStatus = response?.status() ?? null;
 
-    const httpPassed = httpStatus !== null && httpStatus < 400;
+    if (httpStatus === 429) {
+      throw new Error(`SEO baseline BLOCKED: HTTP 429 | ${url}`);
+    }
+
+    const httpPassed = httpStatus === 200;
 
     expect
       .soft(httpPassed, `Unexpected HTTP status for ${url}: ${httpStatus}`)
@@ -45,7 +133,7 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
 
     const titlePassed = monitoredPage.expectedTitle
       ? actualTitle === monitoredPage.expectedTitle
-      : true;
+      : actualTitle.trim().length > 0;
 
     expect.soft(titlePassed, `Unexpected title for ${url}`).toBe(true);
 
@@ -60,16 +148,15 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
 
     const h1Passed = monitoredPage.expectedH1
       ? h1Visible && actualH1 === monitoredPage.expectedH1
-      : h1Visible;
+      : h1Visible && actualH1.length > 0;
 
     expect.soft(h1Passed, `Unexpected H1 for ${url}`).toBe(true);
 
     /*
      * Canonical
      */
-    const canonical = page.locator('link[rel="canonical"]');
-
-    const canonicalUrl = await canonical
+    const canonicalUrl = await page
+      .locator('link[rel="canonical"]')
       .first()
       .getAttribute('href')
       .catch(() => null);
@@ -83,15 +170,17 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
      */
     const robotsContent = await page
       .locator('meta[name="robots"]')
+      .first()
       .getAttribute('content')
       .catch(() => null);
 
     const robots = robotsContent?.toLowerCase() ?? '';
 
-    const hasNoIndex = robots.includes('noindex');
+    const hasNoIndex = robots
+      .split(',')
+      .some((directive) => directive.trim() === 'noindex');
 
-    const shouldBeIndexable: boolean | undefined =
-      monitoredPage.shouldBeIndexable;
+    const shouldBeIndexable = monitoredPage.shouldBeIndexable;
 
     const indexabilityPassed =
       shouldBeIndexable === undefined
@@ -99,11 +188,9 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
         : shouldBeIndexable
           ? !hasNoIndex
           : hasNoIndex;
+
     expect
-      .soft(
-        indexabilityPassed,
-        `Indexability does not match configuration for ${url}`,
-      )
+      .soft(indexabilityPassed, `Indexability mismatch for ${url}`)
       .toBe(true);
 
     /*
@@ -114,13 +201,19 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
       casaMalvaConfig.baseUrl,
     ).toString();
 
-    const robotsResponse = await request.get(robotsUrl);
+    const robotsResponse = await getWithRateLimit(request, robotsUrl);
 
-    const robotsPassed = robotsResponse.status() < 400;
+    const robotsStatus = robotsResponse.status();
 
-    expect
-      .soft(robotsPassed, `robots.txt returned ${robotsResponse.status()}`)
-      .toBe(true);
+    const robotsBlocked = isBlocked(robotsStatus);
+
+    const robotsPassed = robotsStatus >= 200 && robotsStatus < 400;
+
+    if (!robotsBlocked) {
+      expect
+        .soft(robotsPassed, `robots.txt returned HTTP ${robotsStatus}`)
+        .toBe(true);
+    }
 
     /*
      * Sitemap
@@ -130,54 +223,17 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
       casaMalvaConfig.baseUrl,
     ).toString();
 
-    let sitemapResponse = await request.get(sitemapUrl, { timeout: 20_000 });
+    const sitemapResponse = await getWithRateLimit(request, sitemapUrl);
 
-    if (sitemapResponse.status() === 429) {
-      const retryAfter = sitemapResponse
-        .headersArray()
-        .find((header) => header.name.toLowerCase() === 'retry-after')?.value;
+    const sitemapStatus = sitemapResponse.status();
 
-      let waitMs = 15_000;
+    const sitemapBlocked = isBlocked(sitemapStatus);
 
-      if (retryAfter) {
-        waitMs = /^\d+$/.test(retryAfter)
-          ? Number(retryAfter) * 1_000
-          : Date.parse(retryAfter) - Date.now();
-      }
-
-      console.log('Sitemap rate limit:', {
-        retryAfter: retryAfter ?? null,
-        waitMs,
-      });
-
-      // Si exige más de 30 segundos, conservamos el fallo.
-      if (Number.isFinite(waitMs) && waitMs <= 30_000) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, Math.max(1_000, waitMs)),
-        );
-
-        sitemapResponse = await request.get(sitemapUrl, { timeout: 20_000 });
-      }
-    }
-
-    const sitemapPassed = sitemapResponse.status() < 400;
-
-    const sitemapBlocked = sitemapResponse.status() === 429;
-
-    if (sitemapBlocked) {
-      console.warn(
-        `Sitemap BLOCKED (429). Retry-After: ${
-          sitemapResponse.headers()['retry-after'] ?? 'unknown'
-        }`,
-      );
-    }
+    const sitemapPassed = sitemapStatus >= 200 && sitemapStatus < 400;
 
     if (!sitemapBlocked) {
       expect
-        .soft(
-          sitemapPassed,
-          `Sitemap unavailable: HTTP ${sitemapResponse.status()}`,
-        )
+        .soft(sitemapPassed, `Sitemap unavailable: HTTP ${sitemapStatus}`)
         .toBe(true);
     }
 
@@ -214,6 +270,7 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
         id: 'robots',
         label: 'robots.txt',
         passed: robotsPassed,
+        status: robotsBlocked ? 'blocked' : robotsPassed ? 'passed' : 'failed',
       },
       {
         id: 'sitemap',
@@ -231,13 +288,9 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
 
     const result = {
       siteId: casaMalvaConfig.id,
-
       checkedAt: new Date().toISOString(),
-
       passed,
-
       total: checks.length,
-
       checks,
     };
 
@@ -253,10 +306,27 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
       h1: actualH1,
       canonical: canonicalUrl,
       robotsMeta: robotsContent,
+      robotsStatus,
+      sitemapStatus,
     });
+
+    /*
+     * A blocked audit must not be reported as passed.
+     * Save the result first, then fail the test clearly.
+     */
+    if (robotsBlocked || sitemapBlocked) {
+      throw new Error(
+        `SEO AUDIT INCOMPLETE: ${
+          robotsBlocked ? `robots.txt HTTP ${robotsStatus}` : ''
+        } ${sitemapBlocked ? `sitemap HTTP ${sitemapStatus}` : ''}`.trim(),
+      );
+    }
   });
 });
 
+/*
+ * Individual page SEO validation
+ */
 test.describe('SEO Audit: individual pages', () => {
   for (const monitoredPage of casaMalvaConfig.pages) {
     test(`${monitoredPage.name} - SEO validation`, async ({ request }) => {
@@ -265,18 +335,15 @@ test.describe('SEO Audit: individual pages', () => {
         casaMalvaConfig.baseUrl,
       ).toString();
 
-      const response = await request.get(url, {
-        failOnStatusCode: false,
-        maxRetries: 0,
-      });
+      const response = await getWithRateLimit(request, url);
 
       const status = response.status();
 
-      if (status === 429) {
-        const retryAfter = response.headers()['retry-after'] ?? 'unknown';
-
+      if (isBlocked(status)) {
         throw new Error(
-          `SEO audit BLOCKED: HTTP 429 | ${url} | Retry-After: ${retryAfter}`,
+          `SEO audit BLOCKED: HTTP ${status} | ${url} | Retry-After: ${
+            response.headers()['retry-after'] ?? 'unknown'
+          }`,
         );
       }
 
@@ -289,7 +356,9 @@ test.describe('SEO Audit: individual pages', () => {
         response.headers(),
       );
 
-      // Title
+      /*
+       * Title
+       */
       expect.soft(seo.title, `Empty title: ${url}`).not.toBe('');
 
       if (monitoredPage.expectedTitle) {
@@ -298,8 +367,11 @@ test.describe('SEO Audit: individual pages', () => {
           .toBe(monitoredPage.expectedTitle);
       }
 
-      // H1
+      /*
+       * H1
+       */
       expect.soft(seo.h1Count, `Expected one H1: ${url}`).toBe(1);
+
       expect.soft(seo.h1, `Empty H1: ${url}`).not.toBe('');
 
       if (monitoredPage.expectedH1) {
@@ -308,12 +380,16 @@ test.describe('SEO Audit: individual pages', () => {
           .toBe(monitoredPage.expectedH1);
       }
 
-      // Canonical
+      /*
+       * Canonical
+       */
       expect.soft(seo.canonicalCount, `Canonical count: ${url}`).toBe(1);
 
       expect.soft(seo.canonical, `Canonical mismatch: ${url}`).toBe(url);
 
-      // Indexability
+      /*
+       * Indexability
+       */
       if (monitoredPage.shouldBeIndexable !== undefined) {
         expect
           .soft(seo.noindex, `Indexability mismatch: ${url}`)
