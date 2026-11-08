@@ -17,6 +17,14 @@ export interface SearchConsoleQuery {
 export function loadSearchConsoleQueries(): SearchConsoleQuery[] {
   const filePath = path.resolve('data/search-console/Consultas.csv');
 
+  if (!fs.existsSync(filePath)) {
+    console.warn(
+      'Search Console CSV not found. Continuing without Search Console data.',
+    );
+
+    return [];
+  }
+
   const csv = fs.readFileSync(filePath, 'utf-8');
 
   const requiredColumns = [

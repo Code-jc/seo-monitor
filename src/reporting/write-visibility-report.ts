@@ -74,23 +74,26 @@ export function writeVisibilityReport(report: VisibilityReport): string {
 
     keywordSummaries,
 
-    searchConsole: {
-      period: 'Últimos 3 meses',
-      previousPeriod: '3 meses anteriores',
+    searchConsole:
+      searchConsoleQueries.length > 0
+        ? {
+            period: 'Últimos 3 meses',
+            previousPeriod: '3 meses anteriores',
 
-      // Todavía no tenemos totales generales verificados.
-      clicks: null,
-      previousClicks: null,
-      impressions: null,
-      previousImpressions: null,
+            // Todavía no tenemos totales generales verificados.
+            clicks: null,
+            previousClicks: null,
+            impressions: null,
+            previousImpressions: null,
 
-      ctr: null,
-      previousCtr: null,
-      averagePosition: null,
-      previousAveragePosition: null,
+            ctr: null,
+            previousCtr: null,
+            averagePosition: null,
+            previousAveragePosition: null,
 
-      queries: searchConsoleQueries,
-    },
+            queries: searchConsoleQueries,
+          }
+        : null,
   };
 
   const html = renderVisibilityHtml(enrichedReport);
