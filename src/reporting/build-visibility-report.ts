@@ -1,167 +1,151 @@
-import type {
-    SiteConfig,
-} from "../types/site-config";
+import type { SiteConfig } from '../types/site-config';
 
-import type {
-    VisibilityResult,
-} from "../types/search-visibility";
+import type { VisibilityResult } from '../types/search-visibility';
 
-import type {
-    TechnicalSeoResult,
-} from "../types/technical-seo";
+import type { TechnicalSeoResult } from '../types/technical-seo';
 
-import type {
-    VisibilitySummary,
-} from "../visibility/get-visibility-summary";
+import type { VisibilitySummary } from '../visibility/get-visibility-summary';
 
-import type {
-    KeywordVisibilitySummary,
-} from "../visibility/get-keyword-visibility-summaries";
+import type { KeywordVisibilitySummary } from '../visibility/get-keyword-visibility-summaries';
 
 export interface VisibilityReport {
-    siteId: string;
-    siteName: string;
+  siteId: string;
+  siteName: string;
 
-    keyword: string;
+  keyword: string;
 
-    searchContext?: {
-        device: VisibilityResult["device"];
-        country: string;
-        language: string;
-    } | null;
+  searchContext?: {
+    device: VisibilityResult['device'];
+    country: string;
+    language: string;
+  } | null;
 
-    keywordSummaries?:
-    KeywordVisibilitySummary[];
+  keywordSummaries?: KeywordVisibilitySummary[];
 
-    technicalSeo:
-    TechnicalSeoResult | null;
+  technicalSeo: TechnicalSeoResult | null;
 
-    technicalSeoHistory?: TechnicalSeoResult[];
+  technicalSeoHistory?: TechnicalSeoResult[];
 
-    baseline: {
-        status:
-        | VisibilityResult["status"]
-        | null;
+  searchConsole?: {
+    period: string;
 
-        position:
-        number | null;
+    previousPeriod: string;
 
-        checkedAt:
-        string | null;
-    };
+    clicks: number | null;
+    previousClicks: number | null;
 
-    latest: {
-        status:
-        | VisibilityResult["status"]
-        | null;
+    impressions: number | null;
+    previousImpressions: number | null;
 
-        position:
-        number | null;
+    ctr: number | null;
+    previousCtr: number | null;
 
-        checkedAt:
-        string | null;
+    averagePosition: number | null;
+    previousAveragePosition: number | null;
 
-        resultsReviewed?: number | null;
-        pagesReviewed?: number | null;
-        searchLimit?: number | null;
+    queries: {
+      query: string;
+      clicks: number;
+      previousClicks: number;
+      impressions: number;
+      previousImpressions: number;
+      ctr: number;
+      previousCtr: number;
+      position: number | null;
+      previousPosition: number | null;
+    }[];
+  } | null;
 
-    };
+  baseline: {
+    status: VisibilityResult['status'] | null;
 
-    change: {
-        positionChange: number | null;
-        statusChanged: boolean;
-        totalMeasurements: number;
-        measurableMeasurements: number;
-    };
+    position: number | null;
 
-    latestAttempt?: {
-        status: VisibilityResult["status"];
-        checkedAt: string;
-    } | null;
+    checkedAt: string | null;
+  };
+
+  latest: {
+    status: VisibilityResult['status'] | null;
+
+    position: number | null;
+
+    checkedAt: string | null;
+
+    resultsReviewed?: number | null;
+    pagesReviewed?: number | null;
+    searchLimit?: number | null;
+  };
+
+  change: {
+    positionChange: number | null;
+    statusChanged: boolean;
+    totalMeasurements: number;
+    measurableMeasurements: number;
+  };
+
+  latestAttempt?: {
+    status: VisibilityResult['status'];
+    checkedAt: string;
+  } | null;
 }
 
 export function buildVisibilityReport(
-    site: SiteConfig,
-    keyword: string,
-    summary: VisibilitySummary,
-    technicalSeo:
-        TechnicalSeoResult | null = null
+  site: SiteConfig,
+  keyword: string,
+  summary: VisibilitySummary,
+  technicalSeo: TechnicalSeoResult | null = null,
 ): VisibilityReport {
-    return {
-        siteId:
-            site.id,
+  return {
+    siteId: site.id,
 
-        siteName:
-            site.name,
+    siteName: site.name,
 
-        keyword,
+    keyword,
 
-        searchContext: summary.latest
-            ? {
-                device: summary.latest.device,
-                country: summary.latest.country,
-                language: summary.latest.language,
-            }
-            : null,
+    searchContext: summary.latest
+      ? {
+          device: summary.latest.device,
+          country: summary.latest.country,
+          language: summary.latest.language,
+        }
+      : null,
 
+    latestAttempt: summary.latestAttempt
+      ? {
+          status: summary.latestAttempt.status,
+          checkedAt: summary.latestAttempt.checkedAt,
+        }
+      : null,
 
-        latestAttempt: summary.latestAttempt
-            ? {
-                status: summary.latestAttempt.status,
-                checkedAt: summary.latestAttempt.checkedAt,
-            }
-            : null,
+    technicalSeo,
 
-        technicalSeo,
+    baseline: {
+      status: summary.baseline?.status ?? null,
 
-        baseline: {
-            status:
-                summary.baseline
-                    ?.status ??
-                null,
+      position: summary.baseline?.position ?? null,
 
-            position:
-                summary.baseline
-                    ?.position ??
-                null,
+      checkedAt: summary.baseline?.checkedAt ?? null,
+    },
 
-            checkedAt:
-                summary.baseline
-                    ?.checkedAt ??
-                null,
-        },
+    latest: {
+      status: summary.latest?.status ?? null,
 
-        latest: {
-            status:
-                summary.latest
-                    ?.status ??
-                null,
+      position: summary.latest?.position ?? null,
 
-            position:
-                summary.latest
-                    ?.position ??
-                null,
+      checkedAt: summary.latest?.checkedAt ?? null,
 
-            checkedAt:
-                summary.latest
-                    ?.checkedAt ??
-                null,
+      resultsReviewed: summary.latest?.resultsReviewed ?? null,
 
-            resultsReviewed:
-                summary.latest?.resultsReviewed ?? null,
+      pagesReviewed: summary.latest?.pagesReviewed ?? null,
 
-            pagesReviewed:
-                summary.latest?.pagesReviewed ?? null,
+      searchLimit: summary.latest?.searchLimit ?? null,
+    },
 
-            searchLimit:
-                summary.latest?.searchLimit ?? null,
-        },
-
-        change: {
-            positionChange: summary.positionChange,
-            statusChanged: summary.statusChanged,
-            totalMeasurements: summary.totalMeasurements,
-            measurableMeasurements: summary.measurableMeasurements,
-        },
-    };
+    change: {
+      positionChange: summary.positionChange,
+      statusChanged: summary.statusChanged,
+      totalMeasurements: summary.totalMeasurements,
+      measurableMeasurements: summary.measurableMeasurements,
+    },
+  };
 }

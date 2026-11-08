@@ -1,82 +1,54 @@
-import fs from "node:fs";
-import path from "node:path";
+import fs from 'node:fs';
+import path from 'node:path';
 
-import type {
-    TechnicalSeoResult,
-} from "../types/technical-seo";
+import type { TechnicalSeoResult } from '../types/technical-seo';
 
-export function saveTechnicalSeoResult(
-    result: TechnicalSeoResult
-): string {
-    const dataRoot =
-        process.env.SEO_DATA_DIR ?? path.resolve("data");
+export function saveTechnicalSeoResult(result: TechnicalSeoResult): string {
+  const dataRoot = process.env.SEO_DATA_DIR ?? path.resolve('data');
 
-    const directory = path.resolve(
-        dataRoot,
-        "technical-seo"
+  const directory = path.resolve(dataRoot, 'technical-seo');
+
+  fs.mkdirSync(directory, {
+    recursive: true,
+  });
+
+  const filePath = path.join(directory, `${result.siteId}.json`);
+
+  const historyPath = path.join(directory, `${result.siteId}.history.json`);
+
+  const history: TechnicalSeoResult[] = fs.existsSync(historyPath)
+    ? JSON.parse(fs.readFileSync(historyPath, 'utf-8'))
+    : [];
+
+  // Conserva la auditoría anterior al iniciar el historial.
+  if (history.length === 0 && fs.existsSync(filePath)) {
+    const previous: TechnicalSeoResult = JSON.parse(
+      fs.readFileSync(filePath, 'utf-8'),
     );
 
-    fs.mkdirSync(directory, {
-        recursive: true,
-    });
+    history.push(previous);
+  }
 
-    const filePath = path.join(
-        directory,
-        `${result.siteId}.json`
-    );
+  const alreadySaved = history.some(
+    (entry) =>
+      entry.siteId === result.siteId && entry.checkedAt === result.checkedAt,
+  );
 
-    const historyPath = path.join(
-        directory,
-        `${result.siteId}.history.json`
-    );
+  if (!alreadySaved) {
+    history.push(result);
+  }
 
-    const history: TechnicalSeoResult[] =
-        fs.existsSync(historyPath)
-            ? JSON.parse(
-                fs.readFileSync(historyPath, "utf-8")
-            )
-            : [];
+  history.sort(
+    (a, b) => new Date(a.checkedAt).getTime() - new Date(b.checkedAt).getTime(),
+  );
 
-    // Conserva la auditoría anterior al iniciar el historial.
-    if (
-        history.length === 0 &&
-        fs.existsSync(filePath)
-    ) {
-        const previous: TechnicalSeoResult =
-            JSON.parse(
-                fs.readFileSync(filePath, "utf-8")
-            );
+  const latest = history[history.length - 1];
 
-        history.push(previous);
-    }
+  if (latest) {
+    fs.writeFileSync(filePath, JSON.stringify(latest, null, 2), 'utf-8');
+  }
 
-    const alreadySaved = history.some(
-        (entry) =>
-            entry.siteId === result.siteId &&
-            entry.checkedAt === result.checkedAt
-    );
+  fs.writeFileSync(historyPath, JSON.stringify(history, null, 2), 'utf-8');
 
-    if (!alreadySaved) {
-        history.push(result);
-    }
-
-    history.sort(
-        (a, b) =>
-            new Date(a.checkedAt).getTime() -
-            new Date(b.checkedAt).getTime()
-    );
-
-    fs.writeFileSync(
-        historyPath,
-        JSON.stringify(history, null, 2),
-        "utf-8"
-    );
-
-    fs.writeFileSync(
-        filePath,
-        JSON.stringify(result, null, 2),
-        "utf-8"
-    );
-
-    return filePath;
+  return filePath;
 }

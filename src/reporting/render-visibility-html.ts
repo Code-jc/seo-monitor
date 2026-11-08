@@ -59,7 +59,9 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
   const latestPosition =
     report.latest.position !== null
       ? `#${report.latest.position}`
-      : 'Sin ranking';
+      : report.latest.status === 'not_found'
+        ? 'Sin ranking'
+        : 'Sin mediciones';
 
   const baselinePosition =
     report.baseline.position !== null
@@ -85,34 +87,34 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
 
   const technicalChecks = technicalSeo?.checks ?? [];
 
-  const technicalBlockedCount = technicalChecks.filter(
-    (check) => check.status === 'blocked',
-  ).length;
-
-  const technicalFailedCount = technicalChecks.filter(
-    (check) => !check.passed && check.status !== 'blocked',
-  ).length;
-
   const technicalAuditDate = technicalSeo?.checkedAt
     ? formatDate(technicalSeo.checkedAt)
     : null;
 
+  const technicalBlocked = technicalChecks.filter(
+    (check) => check.status === 'blocked',
+  ).length;
+
+  const technicalFailed = technicalChecks.filter(
+    (check) => check.status === 'failed' || (!check.status && !check.passed),
+  ).length;
+
   const technicalStatusText =
     technicalSeo === null
       ? 'Sin revisión disponible'
-      : technicalBlockedCount > 0 && technicalFailedCount > 0
-        ? `${technicalFailedCount} fallidas · ${technicalBlockedCount} bloqueadas`
-        : technicalBlockedCount > 0
-          ? `${technicalBlockedCount} verificaciones bloqueadas (HTTP 429)`
-          : technicalFailedCount > 0
-            ? `${technicalFailedCount} verificaciones fallidas`
-            : 'Todas las verificaciones correctas';
+      : technicalBlocked === 0 && technicalFailed === 0
+        ? 'Todas las verificaciones correctas'
+        : `${technicalPassed} correctas · ${technicalFailed} fallidas · ${technicalBlocked} bloqueadas`;
 
   const baselineDate = formatDate(report.baseline.checkedAt);
 
   const latestDate = formatDate(report.latest.checkedAt);
 
   const keywordSummaries = report.keywordSummaries ?? [];
+
+  const primarySearchConsoleQuery = report.searchConsole?.queries.find(
+    (query) => query.query === report.keyword,
+  );
 
   const coverageText =
     report.latest.resultsReviewed != null
@@ -164,10 +166,10 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
             --muted: #746b66;
 
             --glass:
-                rgba(255, 255, 255, 0.58);
+                #ffffff;
 
             --border:
-                rgba(255, 255, 255, 0.70);
+                #e7e1dc;
 
             --success:
                 #26734d;
@@ -200,73 +202,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                 sans-serif;
 
             background:
-                radial-gradient(
-                    circle at 15% 10%,
-                    rgba(
-                        205,
-                        182,
-                        230,
-                        0.34
-                    ),
-                    transparent 33%
-                ),
-                radial-gradient(
-                    circle at 88% 16%,
-                    rgba(
-                        175,
-                        218,
-                        224,
-                        0.28
-                    ),
-                    transparent 30%
-                ),
-                radial-gradient(
-                    circle at 65% 85%,
-                    rgba(
-                        236,
-                        199,
-                        187,
-                        0.32
-                    ),
-                    transparent 34%
-                ),
-                linear-gradient(
-                    135deg,
-                    #f7f3ef,
-                    #f3eff3 48%,
-                    #eef3f3
-                );
-
-            background-attachment:
-                fixed;
-        }
-
-        body::before {
-            content: "";
-
-            position:
-                fixed;
-
-            inset: 0;
-
-            pointer-events:
-                none;
-
-            background:
-                linear-gradient(
-                    115deg,
-                    transparent 20%,
-                    rgba(
-                        255,
-                        255,
-                        255,
-                        0.25
-                    ) 45%,
-                    transparent 70%
-                );
-
-            opacity:
-                0.75;
+                #f4f1ed;
         }
 
         .container {
@@ -302,39 +238,14 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                 26px;
 
             background:
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.42
-                );
+                #ffffff;
 
             border:
                 1px solid
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.75
-                );
-
-            backdrop-filter:
-                blur(24px)
-                saturate(150%);
-
-            -webkit-backdrop-filter:
-                blur(24px)
-                saturate(150%);
+                var(--border);
 
             box-shadow:
-                var(--shadow),
-                inset 0 1px 0
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.85
-                );
+                var(--shadow);
         }
 
         .hero > * {
@@ -342,44 +253,6 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                 relative;
 
             z-index: 1;
-        }
-
-        .hero::after {
-            content: "";
-
-            position:
-                absolute;
-
-            z-index: 0;
-
-            width:
-                260px;
-
-            height:
-                260px;
-
-            right:
-                8%;
-
-            top:
-                -150px;
-
-            border-radius:
-                50%;
-
-            background:
-                rgba(
-                    196,
-                    177,
-                    230,
-                    0.22
-                );
-
-            filter:
-                blur(35px);
-
-            pointer-events:
-                none;
         }
 
         .eyebrow {
@@ -487,96 +360,8 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                 1px solid
                 var(--border);
 
-            backdrop-filter:
-                blur(22px)
-                saturate(145%);
-
-            -webkit-backdrop-filter:
-                blur(22px)
-                saturate(145%);
-
             box-shadow:
-                var(--shadow),
-                inset 0 1px 0
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.8
-                );
-        }
-
-        .card > * {
-            position:
-                relative;
-
-            z-index: 2;
-        }
-
-        .card::before {
-            content: "";
-
-            position:
-                absolute;
-
-            z-index: 0;
-
-            inset: 0;
-
-            pointer-events:
-                none;
-
-            background:
-                linear-gradient(
-                    145deg,
-                    rgba(
-                        255,
-                        255,
-                        255,
-                        0.32
-                    ),
-                    transparent 42%
-                );
-        }
-
-        .card::after {
-            content: "";
-
-            position:
-                absolute;
-
-            z-index: 1;
-
-            inset:
-                1px;
-
-            border-radius:
-                inherit;
-
-            pointer-events:
-                none;
-
-            background:
-                linear-gradient(
-                    120deg,
-                    rgba(
-                        255,
-                        255,
-                        255,
-                        0.42
-                    ),
-                    transparent 32%,
-                    transparent 68%,
-                    rgba(
-                        188,
-                        213,
-                        235,
-                        0.12
-                    )
-                );
-
-            opacity:
-                0.55;
+                var(--shadow);
         }
 
         .label {
@@ -788,27 +573,11 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                 16px;
 
             background:
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.50
-                );
+                #ffffff;
 
             border:
                 1px solid
-                rgba(
-                    255,
-                    255,
-                    255,
-                    0.72
-                );
-
-            backdrop-filter:
-                blur(18px);
-
-            -webkit-backdrop-filter:
-                blur(18px);
+                var(--border);
 
             box-shadow:
                 0 10px 30px
@@ -846,12 +615,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                 50%;
 
             background:
-                rgba(
-                    38,
-                    115,
-                    77,
-                    0.11
-                );
+                #e8f2ec;
 
             color:
                 var(--success);
@@ -877,12 +641,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                 999px;
 
             background:
-                rgba(
-                    164,
-                    107,
-                    24,
-                    0.09
-                );
+                #f6ecd9;
 
             color:
                 #926119;
@@ -1026,12 +785,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
         999px;
 
     background:
-        rgba(
-            164,
-            107,
-            24,
-            0.09
-        );
+        #f6ecd9;
 
     color:
         #926119;
@@ -1045,12 +799,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
 
 .keyword-status.found {
     background:
-        rgba(
-            38,
-            115,
-            77,
-            0.11
-        );
+        #e8f2ec;
 
     color:
         var(--success);
@@ -1172,7 +921,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
 }
 
 .keyword-history time {
-    opacity: 0.75;
+    color: #766d67;
 }    
 
     </style>
@@ -1238,7 +987,31 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
     </div>
 
 </div>
+        <div class="card">
 
+    <div class="label">
+        Posición media · Search Console
+    </div>
+
+    <div class="metric">
+        ${
+          primarySearchConsoleQuery?.position != null
+            ? primarySearchConsoleQuery.position.toFixed(2)
+            : 'N/A'
+        }
+    </div>
+
+    <div class="details">
+        ${
+          primarySearchConsoleQuery
+            ? `${primarySearchConsoleQuery.clicks} clics · ${primarySearchConsoleQuery.impressions} impresiones`
+            : 'Sin datos de la consulta principal'
+        }
+        <br />
+        Últimos 3 meses
+    </div>
+
+</div>
 
         <div class="card">
 
@@ -1278,26 +1051,11 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
 
 </div>
 
-        <div class="card">
-
-            <div class="label">
-                Cambio
-            </div>
-
-            <div class="metric status-muted">
-                ${positionChange}
-            </div>
-
-            <div class="details">
-                Baseline vs actual
-            </div>
-
-        </div>
 
     </section>
 
     <h2 class="section-title">
-        Visibilidad en Google
+        Ranking puntual en Google · SerpApi
     </h2>
 
     <section class="serp-layout">
@@ -1424,7 +1182,9 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                 ${
                   report.latest.status === 'success'
                     ? `#${report.latest.position}`
-                    : 'Sin ranking'
+                    : report.latest.status === 'not_found'
+                      ? 'Sin ranking'
+                      : 'Sin mediciones'
                 }
             </div>
 
@@ -1479,12 +1239,16 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                 const baseline =
                   summary.baseline.position !== null
                     ? `#${summary.baseline.position}`
-                    : 'Sin ranking';
+                    : summary.baseline.status === 'not_found'
+                      ? 'Sin ranking'
+                      : 'Sin mediciones';
 
                 const current =
                   summary.latest.position !== null
                     ? `#${summary.latest.position}`
-                    : 'Sin ranking';
+                    : summary.latest.status === 'not_found'
+                      ? 'Sin ranking'
+                      : 'Sin mediciones';
 
                 const change =
                   summary.positionChange === null
@@ -1602,6 +1366,60 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
 
 </div>
 
+    <h2 class="section-title">
+         Rendimiento orgánico histórico · Google Search Console
+    </h2>
+
+    <p>
+        Comparación: últimos 3 meses frente a los 3 meses anteriores.
+        Las posiciones son promedios del periodo, no rankings en tiempo real.
+    </p>
+
+    <div class="card table-wrapper">
+        <table class="keyword-table">
+            <thead>
+                <tr>
+                     <th>Consulta</th>
+    <th>Clics actuales</th>
+    <th>Clics anteriores</th>
+    <th>Impresiones actuales</th>
+    <th>Impresiones anteriores</th>
+    <th>CTR actual</th>
+    <th>Posición media</th>
+    <th>Posición anterior</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                ${
+                  report.searchConsole?.queries.length
+                    ? report.searchConsole.queries
+                        .map(
+                          (query) => `
+                            <tr>
+                                 <td>${escapeHtml(query.query)}</td>
+                                 <td>${query.clicks}</td>
+                                    <td>${query.previousClicks}</td>
+                                    <td>${query.impressions}</td>
+                                    <td>${query.previousImpressions}</td>
+                                    <td>${query.ctr.toFixed(2)}%</td>
+                                    <td>${query.position?.toFixed(2) ?? 'Sin datos'}</td>
+                                    <td>${query.previousPosition?.toFixed(2) ?? 'Sin datos'}</td>
+                                                            </tr>
+                          `,
+                        )
+                        .join('')
+                    : `
+                        <tr>
+                            <td colspan="8">
+                                Sin datos de Search Console disponibles
+                            </td>
+                        </tr>
+                      `
+                }
+            </tbody>
+        </table>
+    </div>
 
     <h2 class="section-title">
         Estado técnico
@@ -1611,19 +1429,35 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
         ${
           technicalChecks.length > 0
             ? technicalChecks
-                .map(
-                  (check) => `
-                            <li>
+                .map((check) => {
+                  const status =
+                    check.status ?? (check.passed ? 'passed' : 'failed');
 
-                                <span class="check">
-                                    ${check.passed ? '✓' : '!'}
-                                </span>
+                  const icon =
+                    status === 'passed'
+                      ? '✓'
+                      : status === 'blocked'
+                        ? '⏳'
+                        : '!';
 
-                                ${check.label}
+                  const description =
+                    status === 'passed'
+                      ? 'Correcto'
+                      : status === 'blocked'
+                        ? 'Medición bloqueada'
+                        : 'Falló';
 
-                            </li>
-                        `,
-                )
+                  return `
+    <li>
+      <span class="check">
+        ${icon}
+      </span>
+
+      ${escapeHtml(check.label)}
+      — ${description}
+    </li>
+  `;
+                })
                 .join('')
             : `
                     <li>
@@ -1662,7 +1496,13 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                                         <li>
                                             ${check.passed ? '✓' : '!'}
                                             ${escapeHtml(check.label)}:
-                                            ${check.passed ? 'Correcto' : 'Falló'}
+                                            ${
+                                              check.status === 'blocked'
+                                                ? 'Medición bloqueada'
+                                                : check.passed
+                                                  ? 'Correcto'
+                                                  : 'Falló'
+                                            }
                                         </li>
                                     `,
                                       )
