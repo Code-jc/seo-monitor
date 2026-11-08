@@ -10,6 +10,7 @@ export interface TechnicalSeoCheck {
 
     label: string;
     passed: boolean;
+    status?: 'passed' | 'failed' | 'blocked';
 }
 
 export interface TechnicalSeoResult {

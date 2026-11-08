@@ -28,8 +28,8 @@ export const casaMalvaConfig = {
     {
       name: 'Inicio',
       path: '/',
-      expectedTitle: 'Hotel Casa Malva Guanajuato | Sitio Oficial',
-      expectedH1: 'Hotel Casa Malva Guanajuato',
+      expectedTitle: 'Hotel en Guanajuato | Casa Malva – Sitio Oficial',
+      expectedH1: 'Casa Malva | Hotel en Guanajuato',
       shouldBeIndexable: true,
     },
     {
