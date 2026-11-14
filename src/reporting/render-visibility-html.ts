@@ -87,24 +87,28 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
 
   const technicalChecks = technicalSeo?.checks ?? [];
 
+  const technicalBlockedCount = technicalChecks.filter(
+    (check) => check.status === 'blocked',
+  ).length;
+
+  const technicalFailedCount = technicalChecks.filter(
+    (check) => !check.passed && check.status !== 'blocked',
+  ).length;
+
   const technicalAuditDate = technicalSeo?.checkedAt
     ? formatDate(technicalSeo.checkedAt)
     : null;
 
-  const technicalBlocked = technicalChecks.filter(
-    (check) => check.status === 'blocked',
-  ).length;
-
-  const technicalFailed = technicalChecks.filter(
-    (check) => check.status === 'failed' || (!check.status && !check.passed),
-  ).length;
-
   const technicalStatusText =
     technicalSeo === null
       ? 'Sin revisión disponible'
-      : technicalBlocked === 0 && technicalFailed === 0
-        ? 'Todas las verificaciones correctas'
-        : `${technicalPassed} correctas · ${technicalFailed} fallidas · ${technicalBlocked} bloqueadas`;
+      : technicalBlockedCount > 0 && technicalFailedCount > 0
+        ? `${technicalFailedCount} fallidas · ${technicalBlockedCount} bloqueadas`
+        : technicalBlockedCount > 0
+          ? `${technicalBlockedCount} verificaciones bloqueadas (HTTP 429)`
+          : technicalFailedCount > 0
+            ? `${technicalFailedCount} verificaciones fallidas`
+            : 'Todas las verificaciones correctas';
 
   const baselineDate = formatDate(report.baseline.checkedAt);
 

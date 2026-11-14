@@ -24,7 +24,7 @@ export function loadSearchConsoleQueries(): SearchConsoleQuery[] {
 
     return [];
   }
-
+  
   const csv = fs.readFileSync(filePath, 'utf-8');
 
   const requiredColumns = [

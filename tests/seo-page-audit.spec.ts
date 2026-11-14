@@ -14,14 +14,50 @@ import { extractPageSeo } from '../src/seo/extract-page-seo';
  * Technical SEO audit configuration
  */
 const REQUEST_INTERVAL_MS = 3_000;
-const MAX_RETRIES = 2;
-const MAX_RETRY_AFTER_MS = 60_000;
 const TEST_TIMEOUT_MS = 150_000;
 
 let lastRequestAt = 0;
 
+let blockedUntil = 0;
+
+class SeoRateLimitError extends Error {
+  constructor(
+    public readonly url: string,
+    public readonly retryAfter: string,
+  ) {
+    super(`SEO audit BLOCKED: HTTP 429 | ${url} | Retry-After: ${retryAfter}`);
+    this.name = 'SeoRateLimitError';
+  }
+}
+
+function ensureNotBlocked(): void {
+  if (Date.now() < blockedUntil) {
+    throw new SeoRateLimitError(
+      casaMalvaConfig.baseUrl,
+      String(Math.ceil((blockedUntil - Date.now()) / 1000)),
+    );
+  }
+}
+
+function registerRateLimit(response: APIResponse, url: string): void {
+  const retryAfter = response.headers()['retry-after'] ?? '3600';
+  const seconds = Number(retryAfter);
+  const retryAt = Number.isFinite(seconds)
+    ? Date.now() + Math.max(0, seconds) * 1000
+    : Date.parse(retryAfter);
+
+  blockedUntil = Math.max(
+    blockedUntil,
+    Number.isFinite(retryAt) ? retryAt : Date.now() + 3_600_000,
+  );
+
+  console.warn(`[BLOCKED] ${url} | Retry-After: ${retryAfter}`);
+}
 // Override the global fullyParallel setting for this file.
-test.describe.configure({ mode: 'default' });
+test.describe.configure({
+  mode: 'serial',
+  retries: 0,
+});
 
 test.setTimeout(TEST_TIMEOUT_MS);
 
@@ -36,52 +72,29 @@ async function getWithRateLimit(
   request: APIRequestContext,
   url: string,
 ): Promise<APIResponse> {
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const elapsed = Date.now() - lastRequestAt;
 
-    if (elapsed < REQUEST_INTERVAL_MS) {
-      await wait(REQUEST_INTERVAL_MS - elapsed);
-    }
+  ensureNotBlocked();
 
-    lastRequestAt = Date.now();
+  const elapsed = Date.now() - lastRequestAt;
 
-    const response = await request.get(url, {
-      failOnStatusCode: false,
-      timeout: 20_000,
-    });
-
-    if (response.status() !== 429) {
-      return response;
-    }
-
-    const retryAfter = response.headers()['retry-after'];
-
-    let waitMs = 15_000 * (attempt + 1);
-
-    if (retryAfter) {
-      const seconds = Number(retryAfter);
-
-      waitMs = Number.isFinite(seconds)
-        ? seconds * 1_000
-        : Date.parse(retryAfter) - Date.now();
-    }
-
-    console.warn(
-      `[BLOCKED] HTTP 429: ${url} | Attempt ${attempt + 1}/${MAX_RETRIES + 1}`,
-    );
-
-    if (
-      attempt === MAX_RETRIES ||
-      !Number.isFinite(waitMs) ||
-      waitMs > MAX_RETRY_AFTER_MS
-    ) {
-      return response;
-    }
-
-    await wait(Math.max(1_000, waitMs));
+  if (elapsed < REQUEST_INTERVAL_MS) {
+    await wait(REQUEST_INTERVAL_MS - elapsed);
   }
 
-  throw new Error('Unexpected retry state');
+  ensureNotBlocked();
+  lastRequestAt = Date.now();
+
+  const response = await request.get(url, {
+    failOnStatusCode: false,
+    timeout: 20_000,
+    maxRetries: 0,
+  });
+
+  if (response.status() === 429) {
+    registerRateLimit(response, url);
+  }
+
+  return response;
 }
 
 function isBlocked(status: number): boolean {
@@ -106,6 +119,8 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
 
     const url = new URL(monitoredPage.path, casaMalvaConfig.baseUrl).toString();
 
+    ensureNotBlocked();
+
     const response = await page.goto(url, {
       waitUntil: 'domcontentloaded',
       timeout: 30_000,
@@ -117,7 +132,13 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
     const httpStatus = response?.status() ?? null;
 
     if (httpStatus === 429) {
-      throw new Error(`SEO baseline BLOCKED: HTTP 429 | ${url}`);
+
+      blockedUntil = Math.max(blockedUntil, Date.now() + 3_600_000);
+      throw new SeoRateLimitError(
+        url,
+        response?.headers()['retry-after'] ?? '3600',
+      );
+
     }
 
     const httpPassed = httpStatus === 200;
@@ -222,15 +243,25 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
       '/sitemap_index.xml',
       casaMalvaConfig.baseUrl,
     ).toString();
+    
+    let sitemapStatus: number | null = null;
+    let sitemapBlocked = false;
+    let sitemapPassed = false;
 
-    const sitemapResponse = await getWithRateLimit(request, sitemapUrl);
+    if (Date.now() < blockedUntil) {
+      sitemapBlocked = true;
 
-    const sitemapStatus = sitemapResponse.status();
+      console.warn(
+        '[BLOCKED] Sitemap not requested: active HTTP 429 suspension',
+      );
+    } else {
+      const sitemapResponse = await getWithRateLimit(request, sitemapUrl);
 
-    const sitemapBlocked = isBlocked(sitemapStatus);
-
-    const sitemapPassed = sitemapStatus >= 200 && sitemapStatus < 400;
-
+      sitemapStatus = sitemapResponse.status();
+      sitemapBlocked = isBlocked(sitemapStatus);
+      sitemapPassed = sitemapStatus >= 200 && sitemapStatus < 400;
+    }
+    
     if (!sitemapBlocked) {
       expect
         .soft(sitemapPassed, `Sitemap unavailable: HTTP ${sitemapStatus}`)
@@ -338,7 +369,6 @@ test.describe('SEO Audit: individual pages', () => {
       const response = await getWithRateLimit(request, url);
 
       const status = response.status();
-
       if (isBlocked(status)) {
         throw new Error(
           `SEO audit BLOCKED: HTTP ${status} | ${url} | Retry-After: ${
