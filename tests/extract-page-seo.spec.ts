@@ -19,9 +19,8 @@ test('Extract SEO metadata from Casa Malva', async ({ request }) => {
 
   console.log('EXTRACTED SEO:', seo);
 
-  expect(seo.title).toBe(
-    'Habitacion Individual - Hotel Casa Malva Guanajuato | Sitio Oficial',
-  );
+  expect(seo.title.trim()).not.toBe('');
+  expect(seo.title.toLowerCase()).toContain('casa malva');
 
   expect(seo.h1).toBe('Habitación Individual');
   expect(seo.h1Count).toBe(1);

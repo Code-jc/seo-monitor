@@ -14,8 +14,6 @@ import { extractPageSeo } from '../src/seo/extract-page-seo';
  * Technical SEO audit configuration
  */
 const REQUEST_INTERVAL_MS = 3_000;
-const MAX_RETRIES = 2;
-const MAX_RETRY_AFTER_MS = 60_000;
 const TEST_TIMEOUT_MS = 150_000;
 
 let lastRequestAt = 0;
@@ -74,6 +72,7 @@ async function getWithRateLimit(
   request: APIRequestContext,
   url: string,
 ): Promise<APIResponse> {
+
   ensureNotBlocked();
 
   const elapsed = Date.now() - lastRequestAt;
@@ -133,11 +132,13 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
     const httpStatus = response?.status() ?? null;
 
     if (httpStatus === 429) {
+
       blockedUntil = Math.max(blockedUntil, Date.now() + 3_600_000);
       throw new SeoRateLimitError(
         url,
         response?.headers()['retry-after'] ?? '3600',
       );
+
     }
 
     const httpPassed = httpStatus === 200;
@@ -242,7 +243,7 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
       '/sitemap_index.xml',
       casaMalvaConfig.baseUrl,
     ).toString();
-
+    
     let sitemapStatus: number | null = null;
     let sitemapBlocked = false;
     let sitemapPassed = false;
@@ -260,7 +261,7 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
       sitemapBlocked = isBlocked(sitemapStatus);
       sitemapPassed = sitemapStatus >= 200 && sitemapStatus < 400;
     }
-
+    
     if (!sitemapBlocked) {
       expect
         .soft(sitemapPassed, `Sitemap unavailable: HTTP ${sitemapStatus}`)
@@ -368,7 +369,6 @@ test.describe('SEO Audit: individual pages', () => {
       const response = await getWithRateLimit(request, url);
 
       const status = response.status();
-
       if (isBlocked(status)) {
         throw new Error(
           `SEO audit BLOCKED: HTTP ${status} | ${url} | Retry-After: ${
