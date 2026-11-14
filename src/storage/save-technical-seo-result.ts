@@ -48,7 +48,7 @@ export function saveTechnicalSeoResult(result: TechnicalSeoResult): string {
     fs.writeFileSync(filePath, JSON.stringify(latest, null, 2), 'utf-8');
   }
 
-  fs.writeFileSync(filePath, JSON.stringify(result, null, 2), 'utf-8');
+  fs.writeFileSync(historyPath, JSON.stringify(history, null, 2), 'utf-8');
 
   return filePath;
 }
