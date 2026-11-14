@@ -1,139 +1,173 @@
-import { expect, test } from "@playwright/test";
-import { casaMalvaConfig } from "../config/sites/casa-malva";
+import { expect, test } from '@playwright/test';
+import { casaMalvaConfig } from '../config/sites/casa-malva';
 import {
-    primaryQuery,
-    primaryResults,
-    visibilityResults,
-} from "./fixtures/visibility-results";
+  primaryQuery,
+  primaryResults,
+  visibilityResults,
+} from './fixtures/visibility-results';
 
-import { getKeywordVisibilitySummaries } from "../src/visibility/get-keyword-visibility-summaries";
-import { getVisibilitySummary } from "../src/visibility/get-visibility-summary";
-import { buildVisibilityReport } from "../src/reporting/build-visibility-report";
-import { renderVisibilityHtml } from "../src/reporting/render-visibility-html";
+import { getKeywordVisibilitySummaries } from '../src/visibility/get-keyword-visibility-summaries';
+import { getVisibilitySummary } from '../src/visibility/get-visibility-summary';
+import { buildVisibilityReport } from '../src/reporting/build-visibility-report';
+import { renderVisibilityHtml } from '../src/reporting/render-visibility-html';
 
-test("Render Casa Malva visibility HTML", async ({ page }) => {
-    const summary = getVisibilitySummary(primaryResults);
+test('Render Casa Malva visibility HTML', async ({ page }) => {
+  const summary = getVisibilitySummary(primaryResults);
 
-    const report = buildVisibilityReport(
-        casaMalvaConfig,
-        primaryQuery,
-        summary
-    );
+  const report = buildVisibilityReport(casaMalvaConfig, primaryQuery, summary);
 
-    report.keywordSummaries =
-        getKeywordVisibilitySummaries(visibilityResults);
-    const html = renderVisibilityHtml(report);
+  report.keywordSummaries = getKeywordVisibilitySummaries(visibilityResults);
+  const html = renderVisibilityHtml(report);
 
-    expect(html).toContain(
-        "HOTEL CASA MALVA GUANAJUATO"
-    );
+  expect(html).toContain('HOTEL CASA MALVA GUANAJUATO');
 
-    expect(html).toContain(
-        "hotel casa malva guanajuato"
-    );
+  expect(html).toContain('hotel casa malva guanajuato');
 
-    expect(html).toContain(
-        "Mediciones válidas"
-    );
+  expect(html).toContain('Mediciones válidas');
 
-    expect(html).toContain(
-        "totales"
-    );
+  expect(html).toContain('totales');
 
-    expect(html).toContain("casa malva guanajuato");
-    expect(html).toContain("#18");
-    expect(html).toContain("#8");
-    expect(html).toContain("#24");
+  expect(html).toContain('casa malva guanajuato');
+  expect(html).toContain('#18');
+  expect(html).toContain('#8');
+  expect(html).toContain('#24');
 
-    await page.setContent(html);
+  await page.setContent(html);
 
-    const searchContext = page.locator(".search-context");
-    const latestMeasurement = getVisibilitySummary(primaryResults).latest!;
+  const searchContext = page.locator('.search-context');
+  const latestMeasurement = getVisibilitySummary(primaryResults).latest!;
 
-    await expect(searchContext).toContainText(
-        latestMeasurement.device === "mobile"
-            ? "Móvil"
-            : "Escritorio"
-    );
+  await expect(searchContext).toContainText(
+    latestMeasurement.device === 'mobile' ? 'Móvil' : 'Escritorio',
+  );
 
-    await expect(searchContext).toContainText(
-        `País: ${latestMeasurement.country}`
-    );
+  await expect(searchContext).toContainText(
+    `País: ${latestMeasurement.country}`,
+  );
 
-    await expect(searchContext).toContainText(
-        `Idioma: ${latestMeasurement.language}`
-    );
+  await expect(searchContext).toContainText(
+    `Idioma: ${latestMeasurement.language}`,
+  );
 
-    const histories = page.locator("details.keyword-history");
-    await expect(histories).toHaveCount(2);
+  const histories = page.locator('details.keyword-history');
+  await expect(histories).toHaveCount(2);
 
-    const primaryHistory = page
-        .locator("td.keyword-name")
-        .filter({ hasText: primaryQuery })
-        .locator("details.keyword-history");
+  const primaryHistory = page
+    .locator('td.keyword-name')
+    .filter({ hasText: primaryQuery })
+    .locator('details.keyword-history');
 
-    await expect(primaryHistory.locator("li")).toHaveCount(2);
-    await expect(primaryHistory.locator("ol")).toBeHidden();
+  await expect(primaryHistory.locator('li')).toHaveCount(2);
+  await expect(primaryHistory.locator('ol')).toBeHidden();
 
-    await primaryHistory.locator("summary").click();
+  await primaryHistory.locator('summary').click();
 
-    await expect(primaryHistory.locator("ol")).toBeVisible();
-    await expect(primaryHistory.locator("li").first()).toContainText("#18");
-    await expect(primaryHistory.locator("li").last()).toContainText("#8");
-    await expect(primaryHistory.locator("time").first()).toContainText("(GMT-6)");
-
+  await expect(primaryHistory.locator('ol')).toBeVisible();
+  await expect(primaryHistory.locator('li').first()).toContainText('#18');
+  await expect(primaryHistory.locator('li').last()).toContainText('#8');
+  await expect(primaryHistory.locator('time').first()).toContainText('(GMT-6)');
 });
 
-test("Show technical audit history", async ({ page }) => {
-    const report = buildVisibilityReport(
-        casaMalvaConfig,
-        primaryQuery,
-        getVisibilitySummary(primaryResults)
-    );
+test('Show technical audit history', async ({ page }) => {
+  const report = buildVisibilityReport(
+    casaMalvaConfig,
+    primaryQuery,
+    getVisibilitySummary(primaryResults),
+  );
 
-    report.technicalSeoHistory = [
+  report.technicalSeoHistory = [
+    {
+      siteId: casaMalvaConfig.id,
+      checkedAt: '2026-10-01T12:00:00Z',
+      passed: 0,
+      total: 1,
+      checks: [
         {
-            siteId: casaMalvaConfig.id,
-            checkedAt: "2026-10-01T12:00:00Z",
-            passed: 0,
-            total: 1,
-            checks: [
-                {
-                    id: "sitemap",
-                    label: "Sitemap XML",
-                    passed: false,
-                },
-            ],
+          id: 'sitemap',
+          label: 'Sitemap XML',
+          passed: false,
         },
+      ],
+    },
+    {
+      siteId: casaMalvaConfig.id,
+      checkedAt: '2026-10-02T12:00:00Z',
+      passed: 1,
+      total: 1,
+      checks: [
         {
-            siteId: casaMalvaConfig.id,
-            checkedAt: "2026-10-02T12:00:00Z",
-            passed: 1,
-            total: 1,
-            checks: [
-                {
-                    id: "sitemap",
-                    label: "Sitemap XML",
-                    passed: true,
-                },
-            ],
+          id: 'sitemap',
+          label: 'Sitemap XML',
+          passed: true,
         },
-    ];
+      ],
+    },
+  ];
 
-    await page.setContent(renderVisibilityHtml(report));
+  await page.setContent(renderVisibilityHtml(report));
 
-    const history = page.locator("details.technical-history");
-    const audits = history.locator(":scope > ol > li");
+  const history = page.locator('details.technical-history');
+  const audits = history.locator(':scope > ol > li');
 
-    await expect(history).toHaveCount(1);
-    await expect(audits).toHaveCount(2);
-    await expect(history.locator(":scope > ol")).toBeHidden();
+  await expect(history).toHaveCount(1);
+  await expect(audits).toHaveCount(2);
+  await expect(history.locator(':scope > ol')).toBeHidden();
 
-    await history.locator("summary").click();
+  await history.locator('summary').click();
 
-    await expect(history.locator(":scope > ol")).toBeVisible();
-    await expect(audits.first()).toContainText("0 / 1 checks correctos");
-    await expect(audits.first()).toContainText("Sitemap XML: Falló");
-    await expect(audits.last()).toContainText("1 / 1 checks correctos");
-    await expect(audits.last()).toContainText("Sitemap XML: Correcto");
+  await expect(history.locator(':scope > ol')).toBeVisible();
+  await expect(audits.first()).toContainText('0 / 1 checks correctos');
+  await expect(audits.first()).toContainText('Sitemap XML: Falló');
+  await expect(audits.last()).toContainText('1 / 1 checks correctos');
+  await expect(audits.last()).toContainText('Sitemap XML: Correcto');
+});
+
+test('Distinguish blocked technical checks from SEO failures', async ({
+  page,
+}) => {
+  const report = buildVisibilityReport(
+    casaMalvaConfig,
+    primaryQuery,
+    getVisibilitySummary(primaryResults),
+  );
+
+  report.technicalSeo = {
+    siteId: casaMalvaConfig.id,
+    checkedAt: '2026-11-08T05:48:03Z',
+    passed: 1,
+    total: 3,
+    checks: [
+      {
+        id: 'http',
+        label: 'HTTP 200',
+        passed: true,
+        status: 'passed',
+      },
+      {
+        id: 'sitemap',
+        label: 'Sitemap XML',
+        passed: false,
+        status: 'blocked',
+      },
+      {
+        id: 'canonical',
+        label: 'Canonical',
+        passed: false,
+        status: 'failed',
+      },
+    ],
+  };
+
+  const html = renderVisibilityHtml(report);
+
+  expect(html).toContain('1 fallidas · 1 bloqueadas');
+
+  await page.setContent(html);
+
+  const siteStatus = page
+    .locator('.summary-grid .card')
+    .filter({ hasText: 'Estado del sitio web' });
+
+  await expect(siteStatus).toContainText('1 / 3');
+  await expect(siteStatus).toContainText('1 fallidas · 1 bloqueadas');
 });
