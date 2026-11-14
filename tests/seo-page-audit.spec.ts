@@ -240,13 +240,23 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
       casaMalvaConfig.baseUrl,
     ).toString();
 
-    const sitemapResponse = await getWithRateLimit(request, sitemapUrl);
+    let sitemapStatus: number | null = null;
+    let sitemapBlocked = false;
+    let sitemapPassed = false;
 
-    const sitemapStatus = sitemapResponse.status();
+    if (Date.now() < blockedUntil) {
+      sitemapBlocked = true;
 
-    const sitemapBlocked = isBlocked(sitemapStatus);
+      console.warn(
+        '[BLOCKED] Sitemap not requested: active HTTP 429 suspension',
+      );
+    } else {
+      const sitemapResponse = await getWithRateLimit(request, sitemapUrl);
 
-    const sitemapPassed = sitemapStatus >= 200 && sitemapStatus < 400;
+      sitemapStatus = sitemapResponse.status();
+      sitemapBlocked = isBlocked(sitemapStatus);
+      sitemapPassed = sitemapStatus >= 200 && sitemapStatus < 400;
+    }
 
     if (!sitemapBlocked) {
       expect
