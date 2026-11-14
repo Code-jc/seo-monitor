@@ -56,7 +56,10 @@ function registerRateLimit(response: APIResponse, url: string): void {
   console.warn(`[BLOCKED] ${url} | Retry-After: ${retryAfter}`);
 }
 // Override the global fullyParallel setting for this file.
-test.describe.configure({ mode: 'serial' });
+test.describe.configure({
+  mode: 'serial',
+  retries: 0,
+});
 
 test.setTimeout(TEST_TIMEOUT_MS);
 
