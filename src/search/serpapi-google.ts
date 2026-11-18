@@ -21,7 +21,7 @@ interface SerpApiResponse {
 }
 
 const RESULTS_PER_PAGE = 10;
-const MAX_POSITION = 50;
+const DEFAULT_MAX_POSITION = 50;
 
 async function fetchSerpPage(
   keyword: MonitoredKeyword,
@@ -78,6 +78,17 @@ export async function getGoogleVisibilityViaSerpApi(
   site: SiteConfig,
   keyword: MonitoredKeyword,
 ): Promise<VisibilityResult> {
+  const maxPosition = keyword.maxPosition ?? DEFAULT_MAX_POSITION;
+
+  if (
+    !Number.isInteger(maxPosition) ||
+    maxPosition < RESULTS_PER_PAGE ||
+    maxPosition > DEFAULT_MAX_POSITION ||
+    maxPosition % RESULTS_PER_PAGE !== 0
+  ) {
+    throw new Error('maxPosition must be a multiple of 10 between 10 and 50.');
+  }
+
   const websiteTarget: SearchTarget = {
     id: 'website',
     type: 'website',
@@ -97,7 +108,7 @@ export async function getGoogleVisibilityViaSerpApi(
   let pagesReviewed = 0;
   let requestFailed = false;
 
-  for (let start = 0; start < MAX_POSITION; start += RESULTS_PER_PAGE) {
+  for (let start = 0; start < maxPosition; start += RESULTS_PER_PAGE) {
     let organicResults: SerpApiOrganicResult[];
 
     try {
@@ -204,7 +215,7 @@ export async function getGoogleVisibilityViaSerpApi(
 
     resultsReviewed: reviewedUrls.size,
     pagesReviewed,
-    searchLimit: MAX_POSITION,
+    searchLimit: maxPosition,
 
     /*
      * Deliberately null.
