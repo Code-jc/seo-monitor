@@ -134,4 +134,106 @@ test.describe('SerpApi simulated responses', () => {
     expect(result.pagesReviewed).toBe(2);
     expect(starts).toEqual([0, 10]);
   });
+
+  test('Detect domain page without matching homepage', async () => {
+  const { result, starts } = await simulate(
+    [
+      [
+        {
+          position: 6,
+          link: 'https://hotelcasamalvagto.com/suite-king/',
+          title: 'Suite King',
+        },
+      ],
+      [
+        {
+          position: 2,
+          link: 'https://example.com/hotel',
+        },
+      ],
+    ],
+    20,
+  );
+
+  expect(result.status).toBe('not_found');
+  expect(result.found).toBe(false);
+  expect(result.matchedUrl).toBeNull();
+
+  expect(result.domainMatchedUrl).toBe(
+    'https://hotelcasamalvagto.com/suite-king/',
+  );
+  expect(result.domainMatchedPosition).toBe(6);
+
+  expect(starts).toEqual([0, 10]);
+});
+
+  test('Accept www but exclude staging from domain diagnostic', async () => {
+  const { result } = await simulate(
+    [
+      [
+        {
+          position: 1,
+          link: 'https://staging.hotelcasamalvagto.com/suite-king/',
+        },
+        {
+          position: 2,
+          link: 'https://www.hotelcasamalvagto.com/suite-king/',
+        },
+      ],
+    ],
+    10,
+  );
+
+  expect(result.status).toBe('not_found');
+  expect(result.domainMatchedUrl).toBe(
+    'https://www.hotelcasamalvagto.com/suite-king/',
+  );
+  expect(result.domainMatchedPosition).toBe(2);
+});
+
+test('Ignore malformed URL and continue detecting domain', async () => {
+  const { result, starts } = await simulate(
+    [
+      [
+        {
+          position: 1,
+          link: 'not-a-valid-url',
+        },
+        {
+          position: 2,
+          link: 'https://hotelcasamalvagto.com/suite-king/',
+        },
+      ],
+    ],
+    10,
+  );
+
+  expect(result.status).toBe('not_found');
+  expect(result.domainMatchedUrl).toBe(
+    'https://hotelcasamalvagto.com/suite-king/',
+  );
+  expect(result.domainMatchedPosition).toBe(2);
+  expect(starts).toEqual([0]);
+});
+
+test('Do not count staging homepage as official homepage', async () => {
+  const { result, starts } = await simulate(
+    [
+      [
+        {
+          position: 1,
+          link: 'https://staging.hotelcasamalvagto.com/',
+          title: 'Casa Malva Staging',
+        },
+      ],
+    ],
+    10,
+  );
+
+  expect(result.status).toBe('not_found');
+  expect(result.found).toBe(false);
+  expect(result.matchedUrl).toBeNull();
+  expect(result.domainMatchedUrl).toBeNull();
+  expect(starts).toEqual([0]);
+});
 });

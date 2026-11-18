@@ -103,6 +103,8 @@ export async function getGoogleVisibilityViaSerpApi(
 
   let matchedPosition: number | null = null;
   let matchedPage: number | null = null;
+  let domainMatchedUrl: string | null = null;
+  let domainMatchedPosition: number | null = null;
 
   const reviewedUrls = new Set<string>();
   let pagesReviewed = 0;
@@ -147,26 +149,60 @@ export async function getGoogleVisibilityViaSerpApi(
 
     pagesReviewed += 1;
 
-    for (const result of organicResults) {
-      if (result.link) {
-        reviewedUrls.add(result.link);
-      }
-    }
+    for (const [index, result] of organicResults.entries()) {
+  if (!result.link) {
+    continue;
+  }
+
+  reviewedUrls.add(result.link);
+
+  // Exclude staging and other subdomains.
+ let hostname: string;
+
+try {
+  hostname = new URL(result.link).hostname.toLowerCase();
+} catch {
+  continue;
+}
+
+const domain = websiteTarget.domain.toLowerCase();
+
+if (
+  domainMatchedUrl === null &&
+  (hostname === domain || hostname === `www.${domain}`)
+) {
+    domainMatchedUrl = result.link;
+
+    const apiPosition = result.position;
+
+    domainMatchedPosition =
+      apiPosition !== undefined && apiPosition > start
+        ? apiPosition
+        : start + (apiPosition ?? index + 1);
+  }
+}
 
     const matchedIndex = organicResults.findIndex((result) => {
-      if (!result.link || !matchesTarget(result.link, websiteTarget)) {
-        return false;
-      }
+  if (!result.link || !matchesTarget(result.link, websiteTarget)) {
+    return false;
+  }
 
-      try {
-        const resultPath =
-          new URL(result.link).pathname.replace(/\/+$/, '') || '/';
+  try {
+    const hostname = new URL(result.link).hostname.toLowerCase();
+    const domain = websiteTarget.domain.toLowerCase();
 
-        return resultPath === expectedPath;
-      } catch {
-        return false;
-      }
-    });
+    if (hostname !== domain && hostname !== `www.${domain}`) {
+      return false;
+    }
+
+    const resultPath =
+      new URL(result.link).pathname.replace(/\/+$/, '') || '/';
+
+    return resultPath === expectedPath;
+  } catch {
+    return false;
+  }
+});
 
     if (matchedIndex >= 0) {
       matchedResult = organicResults[matchedIndex];
@@ -212,6 +248,8 @@ export async function getGoogleVisibilityViaSerpApi(
     matchedUrl: matchedResult?.link ?? null,
 
     matchedTitle: matchedResult?.title ?? null,
+    domainMatchedUrl,
+    domainMatchedPosition,
 
     resultsReviewed: reviewedUrls.size,
     pagesReviewed,

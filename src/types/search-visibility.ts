@@ -41,6 +41,9 @@ export interface VisibilityResult {
     resultPage: number | null;
     matchedUrl: string | null;
     matchedTitle: string | null;
+    // Domain-level diagnostic (independent of targetPath)
+    domainMatchedUrl?: string | null;
+    domainMatchedPosition?: number | null;
 
     // Optional for compatibility with older measurements
     resultsReviewed?: number;
