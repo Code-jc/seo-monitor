@@ -5,6 +5,7 @@ export type VisibilityStatus =
     | 'not_found'
     | 'unresolved'
     | 'blocked'
+    | 'skipped_budget'
     | 'error';
 
 export type SearchTargetType =

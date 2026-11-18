@@ -13,6 +13,8 @@ import { mkdir, writeFile } from 'node:fs/promises';
 
 import path from 'node:path';
 
+import type { SerpApiRequestBudget } from './serpapi-request-budget';
+
 interface SerpApiOrganicResult {
   position?: number;
   title?: string;
@@ -91,9 +93,10 @@ async function saveSerpApiResponse(
 
 }
 
-async function fetchSerpPage(
+  async function fetchSerpPage(
   keyword: MonitoredKeyword,
   start: number,
+  budget?: SerpApiRequestBudget,
 ): Promise<SerpApiOrganicResult[]> {
   const apiKey = process.env.SERPAPI_API_KEY;
 
@@ -125,6 +128,14 @@ async function fetchSerpPage(
 
   searchUrl.searchParams.set('api_key', apiKey);
 
+  if (budget) {
+  if (budget.usedRequests >= budget.maxRequests) {
+    throw new Error('SERPAPI_REQUEST_BUDGET_EXHAUSTED');
+  }
+
+  budget.usedRequests += 1;
+}
+
   const response = await fetch(searchUrl.toString(), {
     signal: AbortSignal.timeout(30_000),
   });
@@ -140,7 +151,14 @@ async function fetchSerpPage(
     throw new Error(`SerpApi error: ${data.error}`);
   }
 
+  try {
   await saveSerpApiResponse(keyword, start, data);
+} catch (error) {
+  console.error(
+    'Failed to archive SerpApi response:',
+    error,
+  );
+}
 
   return data.organic_results ?? [];
 }
@@ -148,6 +166,7 @@ async function fetchSerpPage(
 export async function getGoogleVisibilityViaSerpApi(
   site: SiteConfig,
   keyword: MonitoredKeyword,
+  budget?: SerpApiRequestBudget,
 ): Promise<VisibilityResult> {
   const maxPosition = keyword.maxPosition ?? DEFAULT_MAX_POSITION;
 
@@ -181,21 +200,38 @@ export async function getGoogleVisibilityViaSerpApi(
   let pagesReviewed = 0;
   let requestFailed = false;
   let hasOpaqueRedirects = false;
+  let budgetExhausted = false;
 
   for (let start = 0; start < maxPosition; start += RESULTS_PER_PAGE) {
     let organicResults: SerpApiOrganicResult[];
 
     try {
-      organicResults = await fetchSerpPage(keyword, start);
+      organicResults = await fetchSerpPage(keyword, start, budget);
     } catch (firstError) {
+
+      if (
+  firstError instanceof Error &&
+  firstError.message === 'SERPAPI_REQUEST_BUDGET_EXHAUSTED'
+) {
+  budgetExhausted = true;
+  break;
+}
       console.warn(
         `SerpApi failed at page ${start / RESULTS_PER_PAGE + 1}. Retrying...`,
         firstError,
       );
 
       try {
-        organicResults = await fetchSerpPage(keyword, start);
+        organicResults = await fetchSerpPage(keyword, start, budget);
       } catch (secondError) {
+
+         if (
+  secondError instanceof Error &&
+  secondError.message === 'SERPAPI_REQUEST_BUDGET_EXHAUSTED'
+) {
+  budgetExhausted = true;
+  break;
+}
         console.error(
           `SerpApi failed twice for "${keyword.query}" ` +
             `at page ${start / RESULTS_PER_PAGE + 1}:`,
@@ -319,13 +355,15 @@ if (
     targetId: websiteTarget.id,
     targetType: websiteTarget.type,
 
-    status: matchedResult
-  ? 'success'
-  : requestFailed || reviewedUrls.size === 0
-    ? 'error'
-    : hasOpaqueRedirects
-      ? 'unresolved'
-      : 'not_found',
+    status: budgetExhausted
+  ? 'skipped_budget'
+  : matchedResult
+    ? 'success'
+    : requestFailed || reviewedUrls.size === 0
+      ? 'error'
+      : hasOpaqueRedirects
+        ? 'unresolved'
+        : 'not_found',
 
     found: Boolean(matchedResult),
 

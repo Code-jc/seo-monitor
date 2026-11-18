@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { casaMalvaConfig } from '../config/sites/casa-malva';
 import { getGoogleVisibilityViaSerpApi } from '../src/search/serpapi-google';
+import {createSerpApiRequestBudget,} from '../src/search/serpapi-request-budget';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -13,7 +14,11 @@ interface OrganicResult {
 test.describe('SerpApi simulated responses', () => {
   test.describe.configure({ mode: 'serial' });
 
-  async function simulate(pages: OrganicResult[][], maxPosition?: number) {
+  async function simulate(
+  pages: OrganicResult[][],
+  maxPosition?: number,
+  budget = createSerpApiRequestBudget(20),
+) {
     const originalFetch = globalThis.fetch;
     const originalKey = process.env.SERPAPI_API_KEY;
     const starts: number[] = [];
@@ -40,10 +45,14 @@ test.describe('SerpApi simulated responses', () => {
     };
 
     try {
-      const result = await getGoogleVisibilityViaSerpApi(casaMalvaConfig, {
-        ...casaMalvaConfig.keywords[0],
-        maxPosition,
-      });
+      const result = await getGoogleVisibilityViaSerpApi(
+  casaMalvaConfig,
+  {
+    ...casaMalvaConfig.keywords[0],
+    maxPosition,
+  },
+  budget,
+);
 
       return { result, starts };
     } finally {
@@ -339,6 +348,119 @@ test('Save complete SerpApi response', async () => {
 
   expect(content).not.toContain('test-key');
 } finally {
+    globalThis.fetch = originalFetch;
+
+    if (originalKey === undefined) {
+      delete process.env.SERPAPI_API_KEY;
+    } else {
+      process.env.SERPAPI_API_KEY = originalKey;
+    }
+  }
+});
+
+test('Stop when the request budget is exhausted', async () => {
+  const budget = createSerpApiRequestBudget(1);
+
+  const { result, starts } = await simulate(
+    [
+      [{ link: 'https://example.com/page1' }],
+      [{ link: 'https://example.com/page2' }],
+    ],
+    20,
+    budget,
+  );
+
+  expect(result.status).toBe('skipped_budget');
+  expect(result.found).toBe(false);
+  expect(result.position).toBeNull();
+  expect(starts).toEqual([0]);
+  expect(budget.usedRequests).toBe(1);
+});
+
+test('Never exceed the global budget of 20 requests', async () => {
+  const budget = createSerpApiRequestBudget(20);
+  const pages = [
+    [{ link: 'https://example.com/page1' }],
+    [{ link: 'https://example.com/page2' }],
+  ];
+
+  let totalRequests = 0;
+
+  for (let i = 0; i < 11; i++) {
+    const { starts } = await simulate(pages, 20, budget);
+    totalRequests += starts.length;
+  }
+
+  expect(totalRequests).toBe(20);
+  expect(budget.usedRequests).toBe(20);
+});
+
+test('Block retry when request budget is exhausted', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalKey = process.env.SERPAPI_API_KEY;
+  const budget = createSerpApiRequestBudget(1);
+
+  let fetchCalls = 0;
+
+  process.env.SERPAPI_API_KEY = 'test-key';
+
+  globalThis.fetch = async () => {
+    fetchCalls++;
+
+    return new Response('Server error', {
+      status: 500,
+    });
+  };
+
+  try {
+    const result = await getGoogleVisibilityViaSerpApi(
+      casaMalvaConfig,
+      casaMalvaConfig.keywords[0],
+      budget,
+    );
+
+    expect(result.status).toBe('skipped_budget');
+expect(fetchCalls).toBe(1);
+expect(budget.usedRequests).toBe(1);
+  } finally {
+    globalThis.fetch = originalFetch;
+
+    if (originalKey === undefined) {
+      delete process.env.SERPAPI_API_KEY;
+    } else {
+      process.env.SERPAPI_API_KEY = originalKey;
+    }
+  }
+});
+
+test('Count two failed HTTP attempts against the budget', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalKey = process.env.SERPAPI_API_KEY;
+ const budget = createSerpApiRequestBudget(2);
+
+  let fetchCalls = 0;
+
+  process.env.SERPAPI_API_KEY = 'test-key';
+
+  globalThis.fetch = async () => {
+    fetchCalls++;
+
+    return new Response('Server error', {
+      status: 500,
+    });
+  };
+
+  try {
+    const result = await getGoogleVisibilityViaSerpApi(
+      casaMalvaConfig,
+      casaMalvaConfig.keywords[0],
+      budget,
+    );
+
+    expect(result.status).toBe('error');
+    expect(fetchCalls).toBe(2);
+    expect(budget.usedRequests).toBe(2);
+  } finally {
     globalThis.fetch = originalFetch;
 
     if (originalKey === undefined) {
