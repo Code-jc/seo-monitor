@@ -68,6 +68,7 @@ export const casaMalvaConfig = {
     {
       query: 'casa malva',
       targetPath: '/',
+      maxPosition: 20,
       device: 'mobile',
       country: 'MX',
       language: 'es',
@@ -76,6 +77,7 @@ export const casaMalvaConfig = {
     {
       query: 'hotel casa malva guanajuato',
       targetPath: '/',
+      maxPosition: 20,
       device: 'mobile',
       country: 'MX',
       language: 'es',
@@ -84,6 +86,7 @@ export const casaMalvaConfig = {
     {
       query: 'casa malva guanajuato',
       targetPath: '/',
+      maxPosition: 20,
       device: 'mobile',
       country: 'MX',
       language: 'es',
@@ -92,6 +95,7 @@ export const casaMalvaConfig = {
     {
       query: 'hotel en guanajuato',
       targetPath: '/',
+      maxPosition: 20,
       device: 'mobile',
       country: 'MX',
       language: 'es',
@@ -100,6 +104,7 @@ export const casaMalvaConfig = {
     {
       query: 'hotel cerca del museo de las momias',
       targetPath: '/',
+      maxPosition: 20,
       device: 'mobile',
       country: 'MX',
       language: 'es',
@@ -108,6 +113,7 @@ export const casaMalvaConfig = {
     {
       query: 'hotel con estacionamiento en guanajuato',
       targetPath: '/',
+      maxPosition: 20,
       device: 'mobile',
       country: 'MX',
       language: 'es',
@@ -116,6 +122,7 @@ export const casaMalvaConfig = {
     {
       query: 'casa malva sweet stay',
       targetPath: '/',
+      maxPosition: 20,
       device: 'mobile',
       country: 'MX',
       language: 'es',
@@ -124,6 +131,7 @@ export const casaMalvaConfig = {
     {
       query: 'hotel casa malva',
       targetPath: '/',
+      maxPosition: 20,
       device: 'mobile',
       country: 'MX',
       language: 'es',
@@ -132,6 +140,7 @@ export const casaMalvaConfig = {
     {
       query: 'hotel malva',
       targetPath: '/',
+      maxPosition: 20,
       device: 'mobile',
       country: 'MX',
       language: 'es',
@@ -140,6 +149,7 @@ export const casaMalvaConfig = {
     {
       query: 'hoteles en guanajuato',
       targetPath: '/',
+      maxPosition: 20,
       device: 'mobile',
       country: 'MX',
       language: 'es',
