@@ -28,3 +28,9 @@ service-account*.json
 # Operating systems and editors
 .DS_Store
 Thumbs.db
+# Raw SerpAPI responses (local only)
+/data/serpapi-raw/
+
+# Local backups and diagnostics
+/backups/
+/diagnostics/

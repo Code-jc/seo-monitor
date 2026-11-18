@@ -48,10 +48,12 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
         : String(report.change.positionChange);
 
   const latestStatus =
-    report.latest.status === 'success'
-      ? 'Encontrado'
-      : report.latest.status === 'not_found'
-        ? 'No encontrado en resultados consultados'
+  report.latest.status === 'success'
+    ? 'Encontrado'
+    : report.latest.status === 'not_found'
+      ? 'No encontrado en resultados consultados'
+      : report.latest.status === 'unresolved'
+        ? 'Posición no verificable'
         : report.latest.status === 'blocked'
           ? 'Medición bloqueada'
           : 'Sin dato';
@@ -143,12 +145,17 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
         : 'No hay una medición válida disponible.';
 
   const attemptWarning =
-    report.latestAttempt?.status === 'error' ||
-    report.latestAttempt?.status === 'blocked'
-      ? `Último intento sin medición válida: ${formatDate(
-          report.latestAttempt.checkedAt,
-        )}. Se muestra la última medición válida disponible.`
-      : '';
+  report.latestAttempt?.status === 'error' ||
+  report.latestAttempt?.status === 'blocked' ||
+  report.latestAttempt?.status === 'unresolved'
+    ? `Último intento sin medición válida: ${formatDate(
+        report.latestAttempt.checkedAt,
+      )}. ${
+        report.latestAttempt.status === 'unresolved'
+          ? 'Posición no verificable.'
+          : 'La consulta falló o fue bloqueada.'
+      } Se muestra la última medición válida disponible.`
+    : '';
 
   return `
 <!DOCTYPE html>
@@ -1279,16 +1286,19 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                 const found = summary.latest.status === 'success';
 
                 const status = found
-                  ? 'Encontrado'
-                  : summary.latest.status === 'not_found'
-                    ? summary.latest.searchLimit != null
-                      ? `No encontrado hasta posición ${summary.latest.searchLimit}`
-                      : 'No encontrado en resultados consultados'
-                    : 'Sin dato';
+  ? 'Encontrado'
+  : summary.latest.status === 'not_found'
+    ? summary.latest.searchLimit != null
+      ? `No encontrado hasta posición ${summary.latest.searchLimit}`
+      : 'No encontrado en resultados consultados'
+    : summary.latest.status === 'unresolved'
+      ? 'Posición no verificable'
+      : 'Sin dato';
 
                 const failedAttempt =
-                  summary.latestAttempt?.status === 'error' ||
-                  summary.latestAttempt?.status === 'blocked';
+                    summary.latestAttempt?.status === 'error' ||
+                    summary.latestAttempt?.status === 'blocked' ||
+                    summary.latestAttempt?.status === 'unresolved';
 
                 const history = summary.history ?? [];
 
@@ -1304,13 +1314,15 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                                     ${history
                                       .map((measurement) => {
                                         const statusText =
-                                          measurement.status === 'success'
-                                            ? 'Encontrado'
-                                            : measurement.status === 'not_found'
-                                              ? 'No encontrado en resultados consultados'
-                                              : measurement.status === 'blocked'
-                                                ? 'Medición bloqueada'
-                                                : 'Error de medición';
+  measurement.status === 'success'
+    ? 'Encontrado'
+    : measurement.status === 'not_found'
+      ? 'No encontrado en resultados consultados'
+      : measurement.status === 'unresolved'
+        ? 'Posición no verificable'
+        : measurement.status === 'blocked'
+          ? 'Medición bloqueada'
+          : 'Error de medición';
 
                                         const positionText =
                                           measurement.status === 'success' &&

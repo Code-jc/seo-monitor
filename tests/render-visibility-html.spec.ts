@@ -171,3 +171,87 @@ test('Distinguish blocked technical checks from SEO failures', async ({
   await expect(siteStatus).toContainText('1 / 3');
   await expect(siteStatus).toContainText('1 fallidas · 1 bloqueadas');
 });
+
+test('Render unresolved visibility status', async ({ page }) => {
+  const unresolvedMeasurement = {
+    ...primaryResults[primaryResults.length - 1],
+    status: 'unresolved' as const,
+    found: false,
+    position: null,
+    resultPage: null,
+    matchedUrl: null,
+    matchedTitle: null,
+    checkedAt: '2026-11-18T05:00:00Z',
+  };
+
+  const summary = getVisibilitySummary([
+    ...primaryResults,
+    unresolvedMeasurement,
+  ]);
+
+  const report = buildVisibilityReport(
+    casaMalvaConfig,
+    primaryQuery,
+    summary,
+  );
+
+  await page.setContent(renderVisibilityHtml(report));
+
+  await expect(page.locator('body')).toContainText(
+    'Posición no verificable',
+  );
+
+  await expect(
+  page.locator('.summary-grid'),
+).toContainText('#8');
+
+await expect(
+  page.locator('.hero .status-warning'),
+).toContainText('Posición no verificable');
+
+await expect(
+  page.locator('.hero .status-warning'),
+).toContainText('Se muestra la última medición válida disponible');
+});
+
+test('Show unresolved warning for keyword without losing last valid position', async ({
+  page,
+}) => {
+  const unresolvedMeasurement = {
+    ...primaryResults[primaryResults.length - 1],
+    status: 'unresolved' as const,
+    found: false,
+    position: null,
+    resultPage: null,
+    matchedUrl: null,
+    matchedTitle: null,
+    checkedAt: '2026-11-18T05:00:00Z',
+  };
+
+  const report = buildVisibilityReport(
+    casaMalvaConfig,
+    primaryQuery,
+    getVisibilitySummary(primaryResults),
+  );
+
+  report.keywordSummaries = getKeywordVisibilitySummaries([
+    ...visibilityResults,
+    unresolvedMeasurement,
+  ]);
+
+  await page.setContent(renderVisibilityHtml(report));
+
+  const keywordRow = page
+    .locator('tr')
+    .filter({
+      has: page.locator('td.keyword-name', {
+        hasText: primaryQuery,
+      }),
+    });
+
+  await expect(keywordRow).toContainText('#8');
+  await expect(keywordRow).toContainText(
+    'Último intento sin medición válida',
+  );
+  await expect(keywordRow).toContainText('Posición no verificable');
+});

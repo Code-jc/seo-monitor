@@ -3,6 +3,7 @@ export type SearchProvider = 'google';
 export type VisibilityStatus =
     | 'success'
     | 'not_found'
+    | 'unresolved'
     | 'blocked'
     | 'error';
 

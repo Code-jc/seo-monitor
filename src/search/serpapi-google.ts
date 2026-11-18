@@ -9,6 +9,10 @@ import type {
 
 import { matchesTarget } from './matches-target';
 
+import { mkdir, writeFile } from 'node:fs/promises';
+
+import path from 'node:path';
+
 interface SerpApiOrganicResult {
   position?: number;
   title?: string;
@@ -18,10 +22,74 @@ interface SerpApiOrganicResult {
 interface SerpApiResponse {
   organic_results?: SerpApiOrganicResult[];
   error?: string;
+  search_parameters?: Record<string, unknown>;
 }
 
 const RESULTS_PER_PAGE = 10;
 const DEFAULT_MAX_POSITION = 50;
+
+
+async function saveSerpApiResponse(
+  keyword: MonitoredKeyword,
+  start: number,
+  data: SerpApiResponse,
+): Promise<void> {
+  const directory = path.join(
+    process.cwd(),
+    'data',
+    'serpapi-raw',
+    'casa-malva',
+  );
+
+  await mkdir(directory, { recursive: true });
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+
+  const safeKeyword = keyword.query
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  const filename = `${timestamp}_${safeKeyword}_start-${start}.json`;
+
+  const { search_parameters, ...rest } = data;
+
+  const sanitizedData = {
+    ...rest,
+    search_parameters: search_parameters
+      ? Object.fromEntries(
+          Object.entries(search_parameters).filter(
+            ([key]) => key !== 'api_key',
+          ),
+        )
+      : undefined,
+  };
+  const json = JSON.stringify(
+    sanitizedData,
+    (key, value) => {
+      if (/^(api_key|api[-_]?token|authorization)$/i.test(key)) {
+        return undefined;
+      }
+
+      if (typeof value === 'string') {
+        return value.replace(
+          /([?&](?:api_key|api_token|access_token)=)[^&#\s]+/gi,
+          '$1[REDACTED]',
+        );
+      }
+
+      return value;
+    },
+    2,
+  );
+
+  await writeFile(
+    path.join(directory, filename),
+    json,
+    'utf8',
+  );
+
+}
 
 async function fetchSerpPage(
   keyword: MonitoredKeyword,
@@ -67,9 +135,12 @@ async function fetchSerpPage(
 
   const data = (await response.json()) as SerpApiResponse;
 
+
   if (data.error) {
     throw new Error(`SerpApi error: ${data.error}`);
   }
+
+  await saveSerpApiResponse(keyword, start, data);
 
   return data.organic_results ?? [];
 }
@@ -109,6 +180,7 @@ export async function getGoogleVisibilityViaSerpApi(
   const reviewedUrls = new Set<string>();
   let pagesReviewed = 0;
   let requestFailed = false;
+  let hasOpaqueRedirects = false;
 
   for (let start = 0; start < maxPosition; start += RESULTS_PER_PAGE) {
     let organicResults: SerpApiOrganicResult[];
@@ -155,6 +227,20 @@ export async function getGoogleVisibilityViaSerpApi(
   }
 
   reviewedUrls.add(result.link);
+
+  try {
+  const resultUrl = new URL(result.link);
+
+  if (
+    (resultUrl.hostname === 'www.google.com' ||
+      resultUrl.hostname === 'google.com') &&
+    resultUrl.pathname === '/goto'
+  ) {
+    hasOpaqueRedirects = true;
+  }
+} catch {
+  // Invalid URLs are handled by the existing validation.
+}
 
   // Exclude staging and other subdomains.
  let hostname: string;
@@ -234,10 +320,12 @@ if (
     targetType: websiteTarget.type,
 
     status: matchedResult
-      ? 'success'
-      : requestFailed || reviewedUrls.size === 0
-        ? 'error'
-        : 'not_found',
+  ? 'success'
+  : requestFailed || reviewedUrls.size === 0
+    ? 'error'
+    : hasOpaqueRedirects
+      ? 'unresolved'
+      : 'not_found',
 
     found: Boolean(matchedResult),
 

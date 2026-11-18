@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { casaMalvaConfig } from '../config/sites/casa-malva';
 import { getGoogleVisibilityViaSerpApi } from '../src/search/serpapi-google';
+import { readdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
 
 interface OrganicResult {
   position?: number;
@@ -65,6 +67,31 @@ test.describe('SerpApi simulated responses', () => {
     expect(result.pagesReviewed).toBe(0);
     expect(starts).toEqual([0]);
   });
+
+  test('Mark opaque Google redirects as unresolved', async () => {
+  const { result } = await simulate(
+    [
+      [
+        {
+          position: 1,
+          link: 'https://www.google.com/goto?url=CAES123',
+          title: 'Hotel Casa Malva',
+        },
+        {
+          position: 2,
+          link: 'https://example.com/hotel',
+        },
+      ],
+      [],
+    ],
+    20,
+  );
+
+  expect(result.status).toBe('unresolved');
+  expect(result.found).toBe(false);
+  expect(result.position).toBeNull();
+  expect(result.matchedUrl).toBeNull();
+});
 
   test('Count unique URLs across consulted pages', async () => {
     const { result, starts } = await simulate([
@@ -235,5 +262,90 @@ test('Do not count staging homepage as official homepage', async () => {
   expect(result.matchedUrl).toBeNull();
   expect(result.domainMatchedUrl).toBeNull();
   expect(starts).toEqual([0]);
+});
+
+test('Save complete SerpApi response', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalKey = process.env.SERPAPI_API_KEY;
+
+  process.env.SERPAPI_API_KEY = 'test-key';
+
+  globalThis.fetch = async () => {
+    return new Response(
+      JSON.stringify({
+        search_metadata: {
+          status: 'Success',
+        },
+        search_parameters: {
+          api_key: 'test-key',
+          q: 'casa malva',
+        },
+        local_results: {
+          places: [
+            {
+              title: 'Hotel Casa Malva Guanajuato',
+              position: 1,
+            },
+          ],
+        },
+        organic_results: [
+          {
+            position: 1,
+            title: 'Hotel Casa Malva',
+            link: 'https://hotelcasamalvagto.com/',
+          },
+        ],
+      }),
+      { status: 200 },
+    );
+  };
+
+  try {
+  const directory = path.join(
+    process.cwd(),
+    'data',
+    'serpapi-raw',
+    'casa-malva',
+  );
+
+  const before = new Set(await readdir(directory));
+
+  await getGoogleVisibilityViaSerpApi(
+    casaMalvaConfig,
+    casaMalvaConfig.keywords[0],
+  );
+
+  const after = await readdir(directory);
+
+  const newFiles = after.filter(
+    (filename) => !before.has(filename),
+  );
+
+  expect(newFiles).toHaveLength(1);
+
+  const content = await readFile(
+    path.join(directory, newFiles[0]),
+    'utf8',
+  );
+
+  const saved = JSON.parse(content);
+
+  expect(saved.organic_results).toHaveLength(1);
+  expect(saved.local_results.places).toHaveLength(1);
+  expect(saved.search_metadata.status).toBe('Success');
+
+  expect(saved.search_parameters.q).toBe('casa malva');
+  expect(saved.search_parameters).not.toHaveProperty('api_key');
+
+  expect(content).not.toContain('test-key');
+} finally {
+    globalThis.fetch = originalFetch;
+
+    if (originalKey === undefined) {
+      delete process.env.SERPAPI_API_KEY;
+    } else {
+      process.env.SERPAPI_API_KEY = originalKey;
+    }
+  }
 });
 });
