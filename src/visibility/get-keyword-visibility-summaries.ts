@@ -28,6 +28,7 @@ export interface KeywordVisibilitySummary {
     };
 
     latest: {
+        searchLimit?: number | null;
         status:
         | VisibilityResult["status"]
         | null;
@@ -134,6 +135,7 @@ export function getKeywordVisibilitySummaries(
                 },
 
                 latest: {
+                    searchLimit: summary.latest?.searchLimit ?? null,
                     status:
                         summary.latest
                             ?.status ??

@@ -1281,7 +1281,9 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                 const status = found
                   ? 'Encontrado'
                   : summary.latest.status === 'not_found'
-                    ? 'No encontrado'
+                    ? summary.latest.searchLimit != null
+                      ? `No encontrado hasta posición ${summary.latest.searchLimit}`
+                      : 'No encontrado en resultados consultados'
                     : 'Sin dato';
 
                 const failedAttempt =
