@@ -125,6 +125,11 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
       ? `${report.latest.resultsReviewed} resultados únicos revisados`
       : 'Sin cobertura registrada';
 
+  const searchLimitText =
+    report.latest.searchLimit != null
+      ? `Límite de búsqueda: primeras ${report.latest.searchLimit} posiciones`
+      : 'Límite de búsqueda no registrado';
+
   const pagesText =
     report.latest.pagesReviewed != null
       ? `${report.latest.pagesReviewed} páginas con resultados`
@@ -132,9 +137,9 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
 
   const readingText =
     report.latest.status === 'success'
-      ? 'El sitio oficial fue encontrado en los resultados orgánicos.'
+      ? `El sitio oficial fue encontrado en la posición #${report.latest.position}. ${searchLimitText}.`
       : report.latest.status === 'not_found'
-        ? 'El sitio oficial no apareció en los resultados consultados.'
+        ? `El sitio oficial no apareció en los resultados consultados. ${searchLimitText}.`
         : 'No hay una medición válida disponible.';
 
   const attemptWarning =
@@ -1125,6 +1130,16 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                     <div class="datum-name">
                         Cobertura
                     </div>
+
+                    <div class="datum">
+    <div class="datum-name">
+        Límite de búsqueda
+    </div>
+
+    <div class="datum-value">
+        ${searchLimitText}
+    </div>
+</div>
 
                     <div class="datum-value">
                         ${coverageText}
