@@ -44,7 +44,7 @@ test.describe("Casa Malva visibility via SerpApi", () => {
 
       saveVisibilityResult(result);
 
-      expect(["success", "not_found", "unresolved"]).toContain(result.status);
+      expect(["success", "not_found", "unresolved", "skipped_budget"]).toContain(result.status);
     });
   }
 });
