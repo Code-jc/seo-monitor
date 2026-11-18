@@ -33,14 +33,14 @@ test.describe("SerpApi simulated responses", () => {
                     headers: {
                         "Content-Type": "application/json",
                     },
-                }
+                },
             );
         };
 
         try {
             const result = await getGoogleVisibilityViaSerpApi(
                 casaMalvaConfig,
-                casaMalvaConfig.keywords[0]
+                casaMalvaConfig.keywords[0],
             );
 
             return { result, starts };
@@ -89,11 +89,13 @@ test.describe("SerpApi simulated responses", () => {
     test("Stop pagination when the target is found", async () => {
         const { result, starts } = await simulate([
             [{ link: "https://example.com/a" }],
-            [{
-                position: 2,
-                link: casaMalvaConfig.baseUrl,
-                title: "Hotel Casa Malva",
-            }],
+            [
+                {
+                    position: 2,
+                    link: casaMalvaConfig.baseUrl,
+                    title: "Hotel Casa Malva",
+                },
+            ],
         ]);
 
         expect(result.status).toBe("success");
@@ -101,6 +103,24 @@ test.describe("SerpApi simulated responses", () => {
         expect(result.resultPage).toBe(2);
         expect(result.pagesReviewed).toBe(2);
         expect(result.searchUrl).toBeNull();
+        expect(starts).toEqual([0, 10]);
+    });
+
+    test("Handle absolute position on second page", async () => {
+        const { result, starts } = await simulate([
+            [{ link: "https://example.com/a" }],
+            [
+                {
+                    position: 12,
+                    link: casaMalvaConfig.baseUrl,
+                    title: "Hotel Casa Malva",
+                },
+            ],
+        ]);
+
+        expect(result.status).toBe("success");
+        expect(result.position).toBe(12);
+        expect(result.resultPage).toBe(2);
         expect(starts).toEqual([0, 10]);
     });
 });
