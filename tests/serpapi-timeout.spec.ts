@@ -82,9 +82,13 @@ test("preserves partial results when SerpApi fails on page 3", async () => {
       );
     };
 
+    const keyword = {
+  ...casaMalvaConfig.keywords[0],
+  maxPosition: 30,
+};
     const result = await getGoogleVisibilityViaSerpApi(
       casaMalvaConfig,
-      casaMalvaConfig.keywords[0],
+      keyword,
     );
 
     expect(requestedPages).toEqual([0, 10, 20, 20]);
@@ -95,7 +99,7 @@ test("preserves partial results when SerpApi fails on page 3", async () => {
 
     expect(result.pagesReviewed).toBe(2);
     expect(result.resultsReviewed).toBe(20);
-    expect(result.searchLimit).toBe(50);
+    expect(result.searchLimit).toBe(30);
   } finally {
     globalThis.fetch = originalFetch;
 
