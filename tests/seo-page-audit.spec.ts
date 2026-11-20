@@ -55,7 +55,7 @@ function registerRateLimit(response: APIResponse, url: string): void {
 }
 // Override the global fullyParallel setting for this file.
 test.describe.configure({
-  mode: 'serial',
+  mode: 'default',
   retries: 0,
 });
 
