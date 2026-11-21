@@ -122,6 +122,13 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
 
   const keywordSummaries = report.keywordSummaries ?? [];
 
+  const brandRanking = keywordSummaries.find(
+  (summary) =>
+    summary.query === 'hotel casa malva' &&
+    summary.latest.status === 'success' &&
+    summary.latest.position !== null,
+);
+
   const primarySearchConsoleQuery = report.searchConsole?.queries.find(
     (query) => query.query === report.keyword,
   );
@@ -345,7 +352,10 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                     minmax(0, 1fr)
                 );
         }
-
+        
+        .summary-grid > .brand-ranking-card {
+    grid-column: 1 / -1;
+}
         .comparison-grid {
             grid-template-columns:
                 repeat(
@@ -1071,7 +1081,27 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
 
 </div>
 
+      ${
+  brandRanking
+    ? `
+      <div class="card brand-ranking-card">
+        <div class="label">
+          Última posición confirmada · hotel casa malva
+        </div>
 
+        <div class="metric status-ok">
+          #${brandRanking.latest.position}
+        </div>
+
+        <div class="details">
+          Google móvil · México
+          <br />
+          ${formatDate(brandRanking.latest.checkedAt)}
+        </div>
+      </div>
+    `
+    : ''
+}
     </section>
 
     <h2 class="section-title">
