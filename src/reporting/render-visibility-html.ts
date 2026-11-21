@@ -59,11 +59,15 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
           : 'Sin dato';
 
   const latestPosition =
-    report.latest.position !== null
-      ? `#${report.latest.position}`
-      : report.latest.status === 'not_found'
-        ? 'Sin ranking'
-        : 'Sin mediciones';
+  report.latest.position !== null
+    ? `#${report.latest.position}`
+    : report.latest.status === 'not_found'
+      ? 'Sin ranking'
+      : report.latest.status === 'unresolved'
+        ? 'No verificable'
+        : report.latest.status === 'blocked'
+          ? 'Medición bloqueada'
+          : 'Sin mediciones';
 
   const baselinePosition =
     report.baseline.position !== null
@@ -1032,7 +1036,7 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
         <div class="card">
 
             <div class="label">
-                Posición orgánica
+                Posición orgánica · Keyword principal
             </div>
 
             <div class="metric ${
@@ -1377,6 +1381,14 @@ export function renderVisibilityHtml(report: VisibilityReport): string {
                                             ? `<div class="details">
         Último intento sin medición válida<br />
         ${formatDate(summary.latestAttempt!.checkedAt)}
+<br />
+Motivo: ${
+  summary.latestAttempt?.status === 'blocked'
+    ? 'Medición bloqueada'
+    : summary.latestAttempt?.status === 'unresolved'
+      ? 'Posición no verificable'
+      : 'Error de medición'
+}
        </div>`
                                             : ''
                                         }
