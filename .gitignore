@@ -34,3 +34,6 @@ Thumbs.db
 # Local backups and diagnostics
 /backups/
 /diagnostics/
+
+# Temporary SEO audit runtime state
+/.seo-runtime/

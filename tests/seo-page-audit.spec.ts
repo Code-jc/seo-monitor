@@ -10,6 +10,11 @@ import { saveTechnicalSeoResult } from '../src/storage/save-technical-seo-result
 import type { TechnicalSeoCheck } from '../src/types/technical-seo';
 import { extractPageSeo } from '../src/seo/extract-page-seo';
 
+import {
+  getBlockedUntil,
+  registerRateLimit,
+} from '../src/seo/seo-rate-limit';
+
 /*
  * Technical SEO audit configuration
  */
@@ -18,19 +23,26 @@ const TEST_TIMEOUT_MS = 150_000;
 
 let lastRequestAt = 0;
 
-let blockedUntil = 0;
+
+function currentBlockedUntil(): number {
+  return getBlockedUntil(casaMalvaConfig.id);
+}
 
 class SeoRateLimitError extends Error {
   constructor(
     public readonly url: string,
     public readonly retryAfter: string,
   ) {
-    super(`SEO audit BLOCKED: HTTP 429 | ${url} | Retry-After: ${retryAfter}`);
+    super(
+      `SEO audit BLOCKED: HTTP 429 | ${url} | Retry-After: ${retryAfter}`,
+    );
     this.name = 'SeoRateLimitError';
   }
 }
 
 function ensureNotBlocked(): void {
+  const blockedUntil = currentBlockedUntil();
+
   if (Date.now() < blockedUntil) {
     throw new SeoRateLimitError(
       casaMalvaConfig.baseUrl,
@@ -39,20 +51,19 @@ function ensureNotBlocked(): void {
   }
 }
 
-function registerRateLimit(response: APIResponse, url: string): void {
-  const retryAfter = response.headers()['retry-after'] ?? '3600';
-  const seconds = Number(retryAfter);
-  const retryAt = Number.isFinite(seconds)
-    ? Date.now() + Math.max(0, seconds) * 1000
-    : Date.parse(retryAfter);
+function skipIfRateLimited(): void {
+  const remainingMs = currentBlockedUntil() - Date.now();
 
-  blockedUntil = Math.max(
-    blockedUntil,
-    Number.isFinite(retryAt) ? retryAt : Date.now() + 3_600_000,
+  test.skip(
+    remainingMs > 0,
+    `SEO audit blocked by HTTP 429. Retry in ${Math.ceil(
+      Math.max(0, remainingMs) / 1000,
+    )} seconds.`,
   );
-
-  console.warn(`[BLOCKED] ${url} | Retry-After: ${retryAfter}`);
 }
+
+
+
 // Override the global fullyParallel setting for this file.
 test.describe.configure({
   mode: 'default',
@@ -91,7 +102,11 @@ async function getWithRateLimit(
   });
 
   if (response.status() === 429) {
-    registerRateLimit(response, url);
+    registerRateLimit(
+  casaMalvaConfig.id,
+  url,
+  response.headers()['retry-after'] ?? '3600',
+);
   }
 
   return response;
@@ -119,7 +134,7 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
 
     const url = new URL(monitoredPage.path, casaMalvaConfig.baseUrl).toString();
 
-    ensureNotBlocked();
+    skipIfRateLimited();
 
     const response = await page.goto(url, {
       waitUntil: 'domcontentloaded',
@@ -132,14 +147,20 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
     const httpStatus = response?.status() ?? null;
 
     if (httpStatus === 429) {
+  const retryAfter = response?.headers()['retry-after'] ?? '3600';
 
-      blockedUntil = Math.max(blockedUntil, Date.now() + 3_600_000);
-      throw new SeoRateLimitError(
-        url,
-        response?.headers()['retry-after'] ?? '3600',
-      );
+  const blockedUntil = registerRateLimit(
+  casaMalvaConfig.id,
+  url,
+  retryAfter,
+);
 
-    }
+  console.warn(
+    `[BLOCKED] ${url} | Until: ${new Date(blockedUntil).toISOString()}`,
+  );
+
+  throw new SeoRateLimitError(url, retryAfter);
+}
 
     const httpPassed = httpStatus === 200;
 
@@ -248,7 +269,7 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
     let sitemapBlocked = false;
     let sitemapPassed = false;
 
-    if (Date.now() < blockedUntil) {
+    if (Date.now() < currentBlockedUntil()) {
       sitemapBlocked = true;
 
       console.warn(
@@ -361,6 +382,9 @@ test.describe(`SEO Audit: ${casaMalvaConfig.name}`, () => {
 test.describe('SEO Audit: individual pages', () => {
   for (const monitoredPage of casaMalvaConfig.pages) {
     test(`${monitoredPage.name} - SEO validation`, async ({ request }) => {
+
+      skipIfRateLimited();
+
       const url = new URL(
         monitoredPage.path,
         casaMalvaConfig.baseUrl,
